@@ -5,7 +5,7 @@ a browser-based voxel.js game based on Conway's Game of Life, written in JavaScr
 
 ## play online
 The latest stable version of the game is available online:
-http://theoxylo.github.com/voxel-life (coming soon)
+http://theoxylo.github.com/voxel-life
 
 ## github project
 Bug reports, support, source code, etc:
