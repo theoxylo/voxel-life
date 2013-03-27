@@ -1,0 +1,23 @@
+{
+  "name": "voxel-life",
+  "version": "0.0.1",
+  "repository": {
+    "type":"git",
+    "url": "git@github.com:theoxylo/voxel-life.git"
+  },
+  "dependencies": {
+    "voxel": "0.3.1",
+    "voxel-engine": "0.14.4",
+    "voxel-highlight": "0.0.9",
+    "voxel-player": "0.1.0",
+    "painterly-textures": "0.0.3",
+    "extend": "1.1.3"
+  },
+  "devDependencies": {
+    "browserify": "2.7.3",
+    "browservefy": "0.0.10"
+  },
+  "scripts": {
+    "start": "browservefy index.js:bundle.js 8080 -- -d -v"
+  }
+}
