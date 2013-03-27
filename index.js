@@ -18,20 +18,20 @@ function createToggler(keyControl) {
   }
 }
 
-function createNonRepeater(keyControl) {
+function createNonRepeater(keyControl, fn) {
   var canActivate
   return function () { // will only return true once per long keypress
     if (!game.controls.state[keyControl]) {
       canActivate = true  // key released, reset
     } else if (canActivate) {
       canActivate = false
+      if (typeof fn === 'function') fn()
       return true
     }
     return false
   }
 }
 
-console.log("creating game...");
 var game = createGame( {
   generate: function (x, y, z) {
     return y % 16 ? 0 : Math.ceil(Math.random() * 2)
@@ -51,6 +51,8 @@ var game = createGame( {
     , 'I': 'select'
     , 'X': 'copy'
     , 'E': 'paste'
+    , 'O': 'randomize'
+    , 'P': 'pause'
   }, 
   chunkDistance: 2,
   materials: [
@@ -68,13 +70,12 @@ var game = createGame( {
 window.game = game // for debugging
 game.appendTo(document.body)
 
-console.log("creating player...")
 // add the player
 var playerFn = createPlayer(game)
 var player = playerFn('player.png')
 player.possess()
 player.yaw.position.set(2, 14, 4)
-console.log("player created: " + player);
+var triggerView = createNonRepeater('view', player.toggle.bind(player));
 
 // highlight blocks when you look at them, hold <Ctrl> for block placement
 var blockPosPlace, blockPosErase
@@ -104,26 +105,38 @@ game.on('fire', function (target, state) {
   }
 })
 
+// copy-paste multi-voxel selection
+var clipboard = new Clipboard(game)
 var selection
-
 var triggerCopy = createNonRepeater('copy')
 var triggerPaste = createNonRepeater('paste')
-var triggerView = createNonRepeater('view')
 
-var clipboard = new Clipboard(game)
+// GoL support, life engine wrapper
+var life = require('./life')(game, { tickTime: 300 } )
+life.randomize()
+life.apply()
 
-setTimeout(function onUpdate() {
+var triggerRandomize = createNonRepeater('randomize', life.randomize.bind(life))
+var triggerPause = createNonRepeater('pause', life.pause.bind(life))
+
+// main update function, called at about 60 hz
+game.on('tick', function onUpdate(dt) {
+
   if (triggerCopy() && selection) {
     clipboard.copy(selection.start, selection.end);
   }
   else if (triggerPaste()) {
     clipboard.paste(highlighter.currVoxelAdj || highlighter.currVoxelPos, selection);
   }
-  if (triggerView()) {
-    player.toggle() // 1st vs 3rd person view
-  }
-  setTimeout(onUpdate, 100) // repeat
-}, 100)
+
+  triggerView() // 1st vs 3rd person view
+
+  triggerRandomize() // re-randomize the life board
+
+  triggerPause() // pause life engine
+
+  life.tick(dt) // update life engine
+})
 
 highlighter.on('highlight-select', function (s) {
   selection = s

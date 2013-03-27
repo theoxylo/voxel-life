@@ -1,14 +1,14 @@
 # voxel-life
-
-Welcome to voxel-life, a [voxel.js](http://voxeljs.com) game 
-based on [Conway's Game of Life](http://en.wikipedia.org/wiki/Conway%27s_Game_of_Life)
+a browser-based voxel.js game based on Conway's Game of Life, written in JavaScript for Node.js
+* [voxel.js](http://voxeljs.com)
+* [Conway's Game of Life](http://en.wikipedia.org/wiki/Conway%27s_Game_of_Life)
 
 ## play online
 The latest stable version of the game is available online:
-http://theoxylo.github.com/voxel-life
+http://theoxylo.github.com/voxel-life (coming soon)
 
 ## github project
-For support or development:
+Bug reports, support, source code, etc:
 https://github.com/theoxylo/voxel-life
 
 ## offline setup
