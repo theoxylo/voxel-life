@@ -1,7 +1,7 @@
 # voxel-life
 
 Welcome to voxel-life, a [voxel.js](http://voxeljs.com) game 
-based on [Conway's Game of Life] (http://en.wikipedia.org/wiki/The_Game_of_Life)
+based on [Conway's Game of Life] (http://en.wikipedia.org/wiki/Conway%27s_Game_of_Life)
 
 ## play online
 http://theoxylo.github.com/voxel-life
