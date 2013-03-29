@@ -71,13 +71,12 @@ window.game = game // for debugging
 game.appendTo(document.body)
 
 // add the player
-var playerFn = createPlayer(game)
-var player = playerFn('player.png')
+var player = createPlayer(game)('player.png')
 player.possess()
 player.yaw.position.set(2, 14, 4)
 var triggerView = createNonRepeater('view', player.toggle.bind(player));
 
-// highlight blocks when you look at them, hold <Ctrl> for block placement
+// highlight blocks when you look at them
 var blockPosPlace, blockPosErase
 var highlighter = highlight(game, {
   color: 0xffff00

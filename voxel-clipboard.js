@@ -1,3 +1,6 @@
+var systemClipboard = require('node-clipboard')
+var Voxel = require('./Voxel')
+
 module.exports = Clipboard
 
 function Clipboard(game, opts) {
@@ -31,14 +34,25 @@ Clipboard.prototype.copy = function (start, end) {
     for (var j = 0; j < this.dims[1]; j++) {
       for (var k = 0; k < this.dims[2]; k++) {
         // store voxel block material index, 0 for none
-        newSelectionData[index++] = this.game.getBlock([x_min + i, y_min + j, z_min + k])
+        var material = this.game.getBlock([x_min + i, y_min + j, z_min + k])
+        newSelectionData[index++] = new Voxel([i, j, k], material)
       }
     }
   }
   this.data = newSelectionData
+  
+  systemClipboard.write(JSON.stringify(newSelectionData))
 }
 
 Clipboard.prototype.paste = function (pos, selection) {
+  if (!this.data) {
+      try {
+        var newData = JSON.parse(systemClipboard.read())
+      } catch (e) {
+          console.log("Error reading system clipboard: " + e)
+      }
+      if (newData) this.data = newData
+  }
   if (!this.data || (!pos && !selection)) {
     console.log("paste failed: missing required data")
     return;
@@ -51,15 +65,18 @@ Clipboard.prototype.paste = function (pos, selection) {
   }
   console.log("Pasting copied selection at position " + pos + ", data: " + this.data)
 
-  var index = 0
-
-  for (var i = 0; i < this.dims[0]; i++) {
-    for (var j = 0; j < this.dims[1]; j++) {
-      for (var k = 0; k < this.dims[2]; k++) {
-        this.game.setBlock([pos[0]+ i, pos[1] + j, pos[2] + k], this.data[index++])
-      }
-    }
-  }
+  // var index = 0
+  // for (var i = 0; i < this.dims[0]; i++) {
+  //   for (var j = 0; j < this.dims[1]; j++) {
+  //     for (var k = 0; k < this.dims[2]; k++) {
+  //       this.game.setBlock([pos[0]+ i, pos[1] + j, pos[2] + k], this.data[index++])
+  //     }
+  //   }
+  // }
+  var game = this.game
+  this.data.map(function (voxel) {
+      game.setBlock([pos[0] + voxel[0], pos[1] + voxel[1], pos[2] + voxel[2]], voxel.material)
+  })
 }
 
 Clipboard.prototype.rotateAboutY = function () {
@@ -67,16 +84,12 @@ Clipboard.prototype.rotateAboutY = function () {
   
   console.log("rotateAboutY start data: " + this.data);
   
-  var newSelectionData = []
-  var index = 0
-
-  for (var i = 0; i < this.dims[0]; i++) {
-    for (var j = 0; j < this.dims[1]; j++) {
-      for (var k = 0; k < this.dims[2]; k++) {
-        newSelectionData = this.data[index++] // rearrange data somehow...
-      }
-    }
-  }
+  var newSelectionData = this.data.map(function (voxel) {
+      var oldX = voxel[0]
+      voxel[0] =  voxel[2]  // x: becomes old value of z
+      voxel[2] = -oldX      // z: becomes negative old value x
+      return voxel
+  })
   this.data = newSelectionData
   console.log("rotateAboutY ended data: " + this.data)
 }
