@@ -20,10 +20,12 @@ keybindings: {
   , 'R': 'view'           // toggle 1st/3rd-person view
   , 'H': 'adjacent'       // toggle selection of adjacent (empty) voxel
   , 'I': 'select'         // toggle multi-voxel selection box
-  , 'X': 'copy'           // copy current multi-voxel selection
-  , 'E': 'paste'          // paste current multi-voxel selection
+  , 'X': 'select_copy'    // copy current multi-voxel selection
+  , 'E': 'select_paste'   // paste current multi-voxel selection
+  , 'Y': 'select_export'  // export selection copy in [voxel interchange format](https://github.com/maxogden/voxel-engine#voxel-interchange-format)
   , 'O': 'randomize'      // reset GoL state
-  , 'P': 'pause'          // pause GoL iteration
+  , 'P': 'pause'          // pause GoL updates
+  , 'U': 'life_update'    // apply voxel edits back to life engine
   , '<mouse 1>': 'fire'   // left mouse click, remove or place block
   , '<mouse 2>': 'firealt'
   , '<space>'  : 'jump'
@@ -43,6 +45,8 @@ perhaps to modify it or play while offline:
 ```
 npm install voxel-life
 cd voxel-life && npm install
+npm install -g browserify
+browserify test.js -o bundle.js -dv
 npm start
 ```
 Then browse to [http://localhost:8080](http://localhost:8080)

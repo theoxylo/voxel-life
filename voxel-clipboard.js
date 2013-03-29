@@ -41,30 +41,22 @@ Clipboard.prototype.copy = function (start, end) {
   this.data = newSelectionData
 }
 
-Clipboard.prototype.paste = function (pos, selection) {
-  if (!this.data || (!pos && !selection)) {
+Clipboard.prototype.paste = function (position, selection) {
+  if (!this.data || (!position && !selection)) {
     console.log("paste failed: missing required data")
     return;
   }
-  if (!pos) { // derive placement position from selection volume
+  if (!position) { // derive placement position from selection volume
      var x_min = Math.min(selection.start[0], selection.end[0])
      var y_min = Math.min(selection.start[1], selection.end[1])
      var z_min = Math.min(selection.start[2], selection.end[2])
-     pos = [x_min, y_min, z_min]
+     position = [x_min, y_min, z_min]
   }
-  console.log("Pasting copied selection at position " + pos + ", data: " + this.data)
+  console.log("Pasting copied selection at position " + position + ", data: " + this.data)
 
-  // var index = 0
-  // for (var i = 0; i < this.dims[0]; i++) {
-  //   for (var j = 0; j < this.dims[1]; j++) {
-  //     for (var k = 0; k < this.dims[2]; k++) {
-  //       this.game.setBlock([pos[0]+ i, pos[1] + j, pos[2] + k], this.data[index++])
-  //     }
-  //   }
-  // }
   var game = this.game
   this.data.map(function (voxel) {
-      game.setBlock([pos[0] + voxel[0], pos[1] + voxel[1], pos[2] + voxel[2]], voxel.material)
+      game.setBlock([position[0] + voxel[0], position[1] + voxel[1], position[2] + voxel[2]], voxel.material)
   })
 }
 
@@ -82,3 +74,48 @@ Clipboard.prototype.rotateAboutY = function () {
   this.data = newSelectionData
   console.log("rotateAboutY ended data: " + this.data)
 }
+
+Clipboard.prototype.exportData = function () {
+  
+  if (!this.data) return "{ voxels: [], dimensions: [0,0,0], position: [0,0,0] }"
+  
+  function xyzToPackedIndex(x_arg, y_arg, z_arg, dims) { // slow stupid impl
+    var index = 0
+    for (var z = 0; z < dims[2]; z++) {
+      for (var y = 0; y < dims[1]; y++) {
+        for (var x = 0; x < dims[0]; x++) {
+          if (x_arg === x && y_arg === y && z_arg === z) return index
+          index++
+        }
+      }
+    }
+  }
+  
+  function getPackedIndex(x, y, z, dims) { // better impl?
+    return z * (dims[1] * dims[0]) + y * dims[0] + x
+  }
+  
+  var dimensions = this.dims.slice()
+  var voxels = []
+  voxels.length = this.dims[0] * this.dims[1] * this.dims[2]
+  for (var i = 0; i < voxels.length; i++) voxels[i] = 0 // init zero array
+  
+  this.data.map(function (voxel) {
+      var index1 = xyzToPackedIndex(voxel[0], voxel[1], voxel[2], dimensions)
+      var index2 = getPackedIndex(voxel[0], voxel[1], voxel[2], dimensions)
+      
+      if (index1 !== index2) {
+        console.log("error, indexes not the same: " + index1 + " !== " + index2)
+        console.log(voxel)
+      }
+      
+      voxels[getPackedIndex(voxel[0], voxel[1], voxel[2], dimensions)] = voxel.material
+  })
+
+  return {
+    voxels: voxels,
+    dimensions: dimensions,
+    position: [0, 0, 0]
+  }
+}
+

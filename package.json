@@ -16,6 +16,7 @@
   "devDependencies": {
     "browserify":         "2.7.3",
     "browservefy":        "0.0.10",
+    "ecstatic":           "0.4.2",
     "node-static":        "0.6.7"
   },
   "scripts": {

@@ -35,8 +35,8 @@ function createNonRepeater(keyControl, fn) {
 var game = createGame( {
   generate: function (x, y, z) {
       (y % 16 === 0) ? Math.ceil(Math.random() * 2) // repeating levels of grass and obsidian
-      : (x == 0 && y == 1 && z == 0) ? 3         // brick
-      : (x == 1 && y == 1 && z == 0) ? 4         // plank
+      : (x === 0 && y === 1 && z === 0) ? 3         // brick
+      : (x === 1 && y === 1 && z === 0) ? 4         // plank
       : 0                                           // empty
   },
   keybindings: {
@@ -47,11 +47,12 @@ var game = createGame( {
     , 'R': 'view'
     , 'H': 'adjacent'
     , 'I': 'select'
-    , 'X': 'copy'
-    , 'E': 'paste'
-    , 'O': 'randomizeLife'
-    , 'U': 'updateLife'
-    , 'P': 'pauseLife'
+    , 'X': 'select_copy'
+    , 'E': 'select_paste'
+    , 'Y': 'select_export'
+    , 'O': 'life_randomize'
+    , 'U': 'life_update'
+    , 'P': 'life_pause'
     , '<mouse 1>': 'fire'
     , '<mouse 2>': 'firealt'
     , '<space>'  : 'jump'
@@ -111,33 +112,41 @@ game.on('fire', function (target, state) {
 // copy-paste multi-voxel selection
 var clipboard = new Clipboard(game)
 var selection
-var triggerCopy = createNonRepeater('copy')
-var triggerPaste = createNonRepeater('paste')
+var triggerCopy = createNonRepeater('select_copy')
+var triggerPaste = createNonRepeater('select_paste')
+var triggerExport = createNonRepeater('select_export')
 
 // GoL support, life engine wrapper
 var life = require('./life-engine')(game, { tickTime: 300 } )
 life.randomize()
+life.resume()
 
-var triggerRandomize = createNonRepeater('randomizeLife', life.randomize)
-var triggerPause = createNonRepeater('pauseLife', life.togglePause)
+var triggerLifeRandomize = createNonRepeater('life_randomize', life.randomize)
+var triggerLifePause     = createNonRepeater('life_pause',     life.togglePause)
+var triggerLifeUpdate    = createNonRepeater('life_update',    life.readVoxels)
 
 // main update function, called at about 60 hz
 game.on('tick', function onUpdate(dt) {
-
   if (triggerCopy() && selection) {
     clipboard.copy(selection.start, selection.end);
   }
   else if (triggerPaste()) {
     clipboard.paste(highlighter.currVoxelAdj || highlighter.currVoxelPos, selection);
   }
-
+  
+  if (triggerExport()) {
+    var exportedData = JSON.stringify(clipboard.exportData())
+    console.log(exportedData)
+    alert("Selection data: " + exportedData)
+  }
+  
   triggerView() // 1st vs 3rd person view
-
-  triggerRandomize() // re-randomize the life board
-
-  triggerPause() // pause life engine
-
-  life.tick(dt) // update life engine
+  
+  // game of life triggers
+  triggerLifeRandomize()
+  triggerLifePause()
+  triggerLifeUpdate()
+  life.tick(dt) // iterate life engine
 })
 
 game.on('updateLife', function () {
