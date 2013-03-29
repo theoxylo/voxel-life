@@ -41,11 +41,6 @@ var game = createGame( {
     , 'A': 'left'
     , 'S': 'backward'
     , 'D': 'right'
-    , '<mouse 1>': 'fire'
-    , '<mouse 2>': 'firealt'
-    , '<space>': 'jump'
-    , '<shift>': 'crouch'
-    , '<control>': 'alt'
     , 'R': 'view'
     , 'H': 'adjacent'
     , 'I': 'select'
@@ -53,6 +48,11 @@ var game = createGame( {
     , 'E': 'paste'
     , 'O': 'randomize'
     , 'P': 'pause'
+    , '<mouse 1>': 'fire'
+    , '<mouse 2>': 'firealt'
+    , '<space>'  : 'jump'
+    , '<shift>'  : 'crouch'
+    , '<control>': 'alt'
   }, 
   chunkDistance: 2,
   materials: [
