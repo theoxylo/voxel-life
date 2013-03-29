@@ -34,7 +34,10 @@ function createNonRepeater(keyControl, fn) {
 
 var game = createGame( {
   generate: function (x, y, z) {
-    return y % 16 ? 0 : Math.ceil(Math.random() * 2)
+      (y % 16 === 0) ? Math.ceil(Math.random() * 2) // repeating levels of grass and obsidian
+      : (x == 0 && y == 1 && z == 0) ? 3         // brick
+      : (x == 1 && y == 1 && z == 0) ? 4         // plank
+      : 0                                           // empty
   },
   keybindings: {
       'W': 'forward'
@@ -46,8 +49,9 @@ var game = createGame( {
     , 'I': 'select'
     , 'X': 'copy'
     , 'E': 'paste'
-    , 'O': 'randomize'
-    , 'P': 'pause'
+    , 'O': 'randomizeLife'
+    , 'U': 'updateLife'
+    , 'P': 'pauseLife'
     , '<mouse 1>': 'fire'
     , '<mouse 2>': 'firealt'
     , '<space>'  : 'jump'
@@ -65,13 +69,13 @@ var game = createGame( {
   texturePath: texturePath,
   worldOrigin: [0, 0, 0],
   controls: { discreteFire: true }
-});
+})
 
-window.game = game // for debugging
+window.game = game // add to global browser scope for easy debugging
 game.appendTo(document.body)
 
 // add the player
-var player = createPlayer(game)('player.png')
+var player = createPlayer(game)('img/player.png')
 player.possess()
 player.yaw.position.set(2, 14, 4)
 var triggerView = createNonRepeater('view', player.toggle.bind(player));
@@ -83,7 +87,7 @@ var highlighter = highlight(game, {
   , distance: 100
   , adjacentActive: createToggler('adjacent')
   , selectActive: createToggler('select')
-  , animate: false
+  , animate: true
 });
 highlighter.on('highlight', function (voxelPos) { blockPosErase = voxelPos })
 highlighter.on('remove', function (voxelPos) { blockPosErase = null })
@@ -91,7 +95,7 @@ highlighter.on('highlight-adjacent', function (voxelPos) { blockPosPlace = voxel
 highlighter.on('remove-adjacent', function (voxelPos) { blockPosPlace = null })
 
 // block interaction stuff, uses highlight data
-var currentMaterial = 1
+var currentMaterial = 2 // default obsidian
 
 game.on('fire', function (target, state) {
   var position = blockPosPlace
@@ -111,12 +115,11 @@ var triggerCopy = createNonRepeater('copy')
 var triggerPaste = createNonRepeater('paste')
 
 // GoL support, life engine wrapper
-var life = require('./life')(game, { tickTime: 300 } )
+var life = require('./life-engine')(game, { tickTime: 300 } )
 life.randomize()
-life.apply()
 
-var triggerRandomize = createNonRepeater('randomize', life.randomize.bind(life))
-var triggerPause = createNonRepeater('pause', life.pause.bind(life))
+var triggerRandomize = createNonRepeater('randomizeLife', life.randomize)
+var triggerPause = createNonRepeater('pauseLife', life.togglePause)
 
 // main update function, called at about 60 hz
 game.on('tick', function onUpdate(dt) {
@@ -135,6 +138,11 @@ game.on('tick', function onUpdate(dt) {
   triggerPause() // pause life engine
 
   life.tick(dt) // update life engine
+})
+
+game.on('updateLife', function () {
+  console.log("Applying voxel state to life engine")
+  life.readVoxels()
 })
 
 highlighter.on('highlight-select', function (s) {

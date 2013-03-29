@@ -14,8 +14,9 @@
     "voxel-player":       "0.1.0"
   },
   "devDependencies": {
-    "browserify": "2.7.3",
-    "browservefy": "0.0.10"
+    "browserify":         "2.7.3",
+    "browservefy":        "0.0.10",
+    "node-static":        "0.6.7"
   },
   "scripts": {
     "start": "browservefy index.js:bundle.js 8080 -- -dv"

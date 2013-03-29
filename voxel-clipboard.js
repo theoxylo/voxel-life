@@ -1,4 +1,3 @@
-var systemClipboard = require('node-clipboard')
 var Voxel = require('./Voxel')
 
 module.exports = Clipboard
@@ -40,19 +39,9 @@ Clipboard.prototype.copy = function (start, end) {
     }
   }
   this.data = newSelectionData
-  
-  systemClipboard.write(JSON.stringify(newSelectionData))
 }
 
 Clipboard.prototype.paste = function (pos, selection) {
-  if (!this.data) {
-      try {
-        var newData = JSON.parse(systemClipboard.read())
-      } catch (e) {
-          console.log("Error reading system clipboard: " + e)
-      }
-      if (newData) this.data = newData
-  }
   if (!this.data || (!pos && !selection)) {
     console.log("paste failed: missing required data")
     return;
