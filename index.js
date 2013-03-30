@@ -50,8 +50,8 @@ var game = createGame( {
     , 'X': 'select_copy'
     , 'E': 'select_paste'
     , 'Y': 'select_export'
+    , 'T': 'select_rotate'
     , 'O': 'life_randomize'
-    , 'U': 'life_update'
     , 'P': 'life_pause'
     , '<mouse 1>': 'fire'
     , '<mouse 2>': 'firealt'
@@ -115,6 +115,7 @@ var selection
 var triggerCopy = createNonRepeater('select_copy')
 var triggerPaste = createNonRepeater('select_paste')
 var triggerExport = createNonRepeater('select_export')
+var triggerRotate = createNonRepeater('select_rotate')
 
 // GoL support, life engine wrapper
 var life = require('./life-engine')(game, { tickTime: 300 } )
@@ -123,7 +124,6 @@ life.resume()
 
 var triggerLifeRandomize = createNonRepeater('life_randomize', life.randomize)
 var triggerLifePause     = createNonRepeater('life_pause',     life.togglePause)
-var triggerLifeUpdate    = createNonRepeater('life_update',    life.readVoxels)
 
 // main update function, called at about 60 hz
 game.on('tick', function onUpdate(dt) {
@@ -134,7 +134,9 @@ game.on('tick', function onUpdate(dt) {
     clipboard.paste(highlighter.currVoxelAdj || highlighter.currVoxelPos, selection);
   }
   
-  if (triggerExport()) {
+  if (triggerRotate()) clipboard.rotateAboutY()
+  
+  if (triggerExport() && selection) {
     var exportedData = JSON.stringify(clipboard.exportData())
     console.log(exportedData)
     alert("Selection data: " + exportedData)
@@ -145,19 +147,14 @@ game.on('tick', function onUpdate(dt) {
   // game of life triggers
   triggerLifeRandomize()
   triggerLifePause()
-  triggerLifeUpdate()
   life.tick(dt) // iterate life engine
-})
-
-game.on('updateLife', function () {
-  console.log("Applying voxel state to life engine")
-  life.readVoxels()
 })
 
 highlighter.on('highlight-select', function (s) {
   selection = s
   console.log(">>> [" + s.start + "][" + s.end + "] highlighted selection")
 })
+
 highlighter.on('highlight-deselect', function (s) {
   selection = null
   console.log("<<< [" + s.start + "][" + s.end + "] selection un-highlighted")

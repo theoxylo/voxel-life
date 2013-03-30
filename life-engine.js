@@ -10,14 +10,17 @@ module.exports = function createInstance(game, opts) {
   var instance = new Life(boardSize)
 
   function pause() { 
+    if (paused) return
     paused = true
   }
 
   function togglePause() {
-    paused = !paused
+    paused ? resume() : pause()
   }
 
   function resume() { 
+    if (!paused) return
+    readVoxels()
     paused = false
   }
 
@@ -33,11 +36,11 @@ module.exports = function createInstance(game, opts) {
   }
 
   function readVoxels() {
-    pause()
     for (var i = 0; i < boardSize; i++) {
       for (var j = 0; j < boardSize; j++) {
-        pos = [boardPos[0] + i, boardPos[1], boardPos[2] + j] 
-        instance.setCell(i, j, game.getBlock(pos))
+        var pos = [boardPos[0] + i, boardPos[1], boardPos[2] + j] 
+	// voxel material 2 (obsidian) is active life cell
+        instance.setCell(i, j, game.getBlock(pos) === 2 ? 1 : 0) 
       }
     }
     paint()
@@ -54,11 +57,10 @@ module.exports = function createInstance(game, opts) {
   }
 
   function paint() {
-    var pos
     for (var i = 0; i < boardSize; i++) {
       for (var j = 0; j < boardSize; j++) {
-    pos = [boardPos[0] + i, boardPos[1], boardPos[2] + j] 
-    game.setBlock(pos, instance.getCell(i, j) ? 2 : 1)
+        var pos = [boardPos[0] + i, boardPos[1], boardPos[2] + j] 
+        game.setBlock(pos, instance.getCell(i, j) ? 2 : 1)
       }
     }
   }
@@ -69,7 +71,6 @@ module.exports = function createInstance(game, opts) {
     togglePause: togglePause,
     resume: resume,
     randomize: randomize,
-    readVoxels: readVoxels,
     tick: tick,
     paint: paint
   }
