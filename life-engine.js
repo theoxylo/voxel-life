@@ -36,6 +36,7 @@ module.exports = function createInstance(game, opts) {
   }
 
   function readVoxels() {
+    console.log('readVoxels')
     for (var i = 0; i < boardSize; i++) {
       for (var j = 0; j < boardSize; j++) {
         var pos = [boardPos[0] + i, boardPos[1], boardPos[2] + j] 
@@ -72,6 +73,7 @@ module.exports = function createInstance(game, opts) {
     resume: resume,
     randomize: randomize,
     tick: tick,
+    readVoxels: readVoxels,
     paint: paint
   }
 }

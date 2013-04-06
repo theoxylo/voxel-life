@@ -76,7 +76,7 @@ window.game = game // add to global browser scope for easy debugging
 game.appendTo(document.body)
 
 // add the player
-var player = createPlayer(game)('img/player.png')
+var player = createPlayer(game)('img/player.png', { gravity: true })
 player.possess()
 player.yaw.position.set(2, 14, 4)
 var triggerView = createNonRepeater('view', player.toggle.bind(player));
@@ -100,9 +100,7 @@ var currentMaterial = 2 // default obsidian
 
 game.on('fire', function (target, state) {
   var position = blockPosPlace
-  if (position) {
-    game.createBlock(position, currentMaterial)
-  }
+  if (position) game.createBlock(position, currentMaterial)
   else {
     position = blockPosErase
     if (position) game.setBlock(position, 0)
@@ -118,7 +116,7 @@ var triggerExport = createNonRepeater('select_export')
 var triggerRotate = createNonRepeater('select_rotate')
 
 // GoL support, life engine wrapper
-var life = require('./life-engine')(game, { tickTime: 300 } )
+var life = require('./life-engine')(game, { tickTime: 250 } )
 life.randomize()
 life.resume()
 
@@ -132,6 +130,7 @@ game.on('tick', function onUpdate(dt) {
   }
   else if (triggerPaste()) {
     clipboard.paste(highlighter.currVoxelAdj || highlighter.currVoxelPos, selection);
+    life.readVoxels()
   }
   
   if (triggerRotate()) clipboard.rotateAboutY()
