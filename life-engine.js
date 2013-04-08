@@ -7,7 +7,7 @@ module.exports = function createInstance(game, opts) {
   var tickTime = opts.tickTime || 500
   var timeSinceTick = 0
   var paused = false
-  var cells = new Array(boardSize * boardSize)
+  var cells = [] // new Array(boardSize * boardSize)
 
   function addCell(cell) {
     cells[cell.x * boardSize + cell.z] = cell
@@ -47,6 +47,7 @@ module.exports = function createInstance(game, opts) {
     addCell( { x: 1, z: 2, on: true } )
     addCell( { x: 2, z: 1, on: true } )
 
+
     updateVoxels()
   }
 
@@ -62,6 +63,15 @@ module.exports = function createInstance(game, opts) {
     }
   }
 
+  function speedUp() {
+    tickTime *= 0.9
+    if (tickTime < 10) tickTime = 10
+  }
+
+  function speedDown() {
+    tickTime *= 1.1
+  }
+
   function tick(dt) { 
     if (paused) return;
     timeSinceTick += dt
@@ -70,7 +80,7 @@ module.exports = function createInstance(game, opts) {
 
       // remove inactive cells
       cells = cells.map(function (cell) { 
-        return cell && cell.on ? cell : undefined 
+        return cell && cell.on ? cell : null 
       })
 
       var possibleNewCells = []
@@ -96,28 +106,28 @@ module.exports = function createInstance(game, opts) {
         var count = 0 // number of live neighbors
         for (var dx = -1; dx < 2; dx++) {
           for (var dz = -1; dz < 2; dz++) {
-            if (dx === 0 && dz === 0) continue
+            if (dx === 0 && dz === 0) continue // self
             var empty = getEmptyNeighbor(cell.x, cell.z, dx, dz)
             if (!empty) count++
           }
         }
         if (count === 3) return cell // a new cell is born
-        return undefined
+        return null
       }).forEach(function (cell) {
           if (!cell) return
           cell.on = true
           addCell(cell)
       })
 
-      function getEmptyNeighbor(x, z, dx, dz) {
+      function getEmptyNeighbor(x, z, dx, dz) { // candidate for new cell if enough live neighbors
         var x_coord = (x + dx) % boardSize
         if (x_coord < 0) x_coord += boardSize
 
         var z_coord = (z + dz) % boardSize
         if (z_coord < 0) z_coord += boardSize
 
-        if (cells[x_coord * boardSize + z_coord]) return false
-        return  { x: x_coord, z: z_coord, on: false }
+        if (cells[x_coord * boardSize + z_coord]) return false // there is a live neighbor there
+        return  { x: x_coord, z: z_coord, on: false } // return inactive cell, candidate for activation
       }
 
       updateVoxels()
@@ -139,6 +149,8 @@ module.exports = function createInstance(game, opts) {
     resume: resume,
     reset: reset,
     tick: tick,
+    speedUp: speedUp,
+    speedDown: speedDown,
     readVoxels: readVoxels
   }
 }

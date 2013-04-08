@@ -39,9 +39,11 @@ var game = createGame( {
       : 0                                           // empty
   },
   generate: function (x, y, z) {
-    return (y === 10 && Math.abs(x) < 1 && Math.abs(z) < 1) ? 3 // platform for player
-      : (y === 0 && Math.abs(x) <= 32 && Math.abs(z) <= 32) ? 1   // expanse of grass same size as life board
-      : 0
+    return (y === 10 && x === 0 && z === 0) ? 3 // single voxel for player start platform
+      //: (y === 0 && Math.abs(x) <= 32 && Math.abs(z) <= 32) ? 1   // expanse of grass same size as life board
+      //: (y === 0 && Math.abs(x) <= 48 && Math.abs(z) <= 48) ? 1   // expanse of grass same size as life board
+      : (y === 0) ? 1   // infinite expanse of grass, bigger than life board
+      : 0 // space!
   },
   keybindings: {
       'W': 'forward'
@@ -57,16 +59,19 @@ var game = createGame( {
     , 'T': 'select_rotate'
     , 'O': 'life_reset'
     , 'P': 'life_pause'
+    , 'U': 'life_speed_up'
+    , 'J': 'life_speed_down'
     , '<mouse 1>': 'fire'
     , '<mouse 2>': 'firealt'
     , '<space>'  : 'jump'
     , '<shift>'  : 'crouch'
     , '<control>': 'alt'
   }, 
-  chunkDistance: 2,
+  chunkDistance: 4,
   materials: [
-    ['grass', 'dirt', 'grass_dirt'],
     'obsidian',
+    'diamond',
+    ['grass', 'dirt', 'grass_dirt'],
     'brick',
     'grass',
     'plank'
@@ -120,7 +125,12 @@ var triggerExport = createNonRepeater('select_export')
 var triggerRotate = createNonRepeater('select_rotate')
 
 // GoL support, life engine wrapper
-var life = require('./life-engine')(game, { tickTime: 200 } )
+var life = require('./life-engine')(game, { 
+  tickTime: 200
+  //, off_material: 1 // for fill in
+  , on_material: 3 // e.g. glowstone from materials []
+  , boardSize: 96 // huge!
+})
 life.reset()
 life.resume()
 
@@ -150,6 +160,8 @@ function onUpdate(dt) {
   triggerView() // 1st vs 3rd person view
   
   // game of life triggers
+  if (game.controls.state.life_speed_up) life.speedUp()
+  else if (game.controls.state.life_speed_down) life.speedDown()
   triggerLifeReset()
   triggerLifePause()
   life.tick(dt) // iterate life engine
