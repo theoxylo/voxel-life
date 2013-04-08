@@ -1,4 +1,4 @@
-var Voxel = require('./Voxel')
+var Vooxel = require('./Voxel')
 
 module.exports = Clipboard
 
@@ -34,7 +34,7 @@ Clipboard.prototype.copy = function (start, end) {
       for (var k = 0; k < this.dims[2]; k++) {
         // store voxel block material index, 0 for none
         var material = this.game.getBlock([x_min + i, y_min + j, z_min + k])
-        newSelectionData[index++] = new Voxel([i, j, k], material)
+        newSelectionData[index++] = new Vooxel([i, j, k], material)
       }
     }
   }

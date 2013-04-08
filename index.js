@@ -1,4 +1,3 @@
-var voxel = require('voxel')
 var createGame = require('voxel-engine')
 var highlight = require('voxel-highlight')
 var createPlayer = require('voxel-player')
@@ -33,11 +32,16 @@ function createNonRepeater(keyControl, fn) {
 }
 
 var game = createGame( {
-  generate: function (x, y, z) {
-      (y % 16 === 0) ? Math.ceil(Math.random() * 2) // repeating levels of grass and obsidian
+  generateOld: function (x, y, z) {
+      return (y % 16 === 0) ? Math.ceil(Math.random() * 2) // repeating levels of grass and obsidian
       : (x === 0 && y === 1 && z === 0) ? 3         // brick
       : (x === 1 && y === 1 && z === 0) ? 4         // plank
       : 0                                           // empty
+  },
+  generate: function (x, y, z) {
+    return (y === 10 && Math.abs(x) < 1 && Math.abs(z) < 1) ? 3 // platform for player
+      : (y === 0 && Math.abs(x) <= 32 && Math.abs(z) <= 32) ? 1   // expanse of grass same size as life board
+      : 0
   },
   keybindings: {
       'W': 'forward'
@@ -51,7 +55,7 @@ var game = createGame( {
     , 'E': 'select_paste'
     , 'Y': 'select_export'
     , 'T': 'select_rotate'
-    , 'O': 'life_randomize'
+    , 'O': 'life_reset'
     , 'P': 'life_pause'
     , '<mouse 1>': 'fire'
     , '<mouse 2>': 'firealt'
@@ -78,8 +82,8 @@ game.appendTo(document.body)
 // add the player
 var player = createPlayer(game)('img/player.png', { gravity: true })
 player.possess()
-player.yaw.position.set(2, 14, 4)
-var triggerView = createNonRepeater('view', player.toggle.bind(player));
+player.yaw.position.set(0, 14, 0)
+var triggerView = createNonRepeater('view', player.toggle.bind(player))
 
 // highlight blocks when you look at them
 var blockPosPlace, blockPosErase
@@ -89,7 +93,7 @@ var highlighter = highlight(game, {
   , adjacentActive: createToggler('adjacent')
   , selectActive: createToggler('select')
   , animate: true
-});
+})
 highlighter.on('highlight', function (voxelPos) { blockPosErase = voxelPos })
 highlighter.on('remove', function (voxelPos) { blockPosErase = null })
 highlighter.on('highlight-adjacent', function (voxelPos) { blockPosPlace = voxelPos })
@@ -116,26 +120,28 @@ var triggerExport = createNonRepeater('select_export')
 var triggerRotate = createNonRepeater('select_rotate')
 
 // GoL support, life engine wrapper
-var life = require('./life-engine')(game, { tickTime: 250 } )
-life.randomize()
+var life = require('./life-engine')(game, { tickTime: 200 } )
+life.reset()
 life.resume()
 
-var triggerLifeRandomize = createNonRepeater('life_randomize', life.randomize)
+var triggerLifeReset = createNonRepeater('life_reset', life.reset)
 var triggerLifePause     = createNonRepeater('life_pause',     life.togglePause)
 
 // main update function, called at about 60 hz
-game.on('tick', function onUpdate(dt) {
+game.on('tick', onUpdate)
+
+function onUpdate(dt) {
   if (triggerCopy() && selection) {
-    clipboard.copy(selection.start, selection.end);
+    clipboard.copy(selection.start, selection.end)
   }
   else if (triggerPaste()) {
-    clipboard.paste(highlighter.currVoxelAdj || highlighter.currVoxelPos, selection);
+    clipboard.paste(highlighter.currVoxelAdj || highlighter.currVoxelPos, selection)
     life.readVoxels()
   }
   
   if (triggerRotate()) clipboard.rotateAboutY()
   
-  if (triggerExport() && selection) {
+  if (triggerExport()) {
     var exportedData = JSON.stringify(clipboard.exportData())
     console.log(exportedData)
     alert("Selection data: " + exportedData)
@@ -144,10 +150,10 @@ game.on('tick', function onUpdate(dt) {
   triggerView() // 1st vs 3rd person view
   
   // game of life triggers
-  triggerLifeRandomize()
+  triggerLifeReset()
   triggerLifePause()
   life.tick(dt) // iterate life engine
-})
+}
 
 highlighter.on('highlight-select', function (s) {
   selection = s

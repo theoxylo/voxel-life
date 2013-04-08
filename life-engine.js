@@ -1,13 +1,17 @@
-var Life = require('alive')
-
 module.exports = function createInstance(game, opts) {
   opts = opts || {}
-  var boardPos = opts.boardPosition || [-32, 0, -32]
+  var on_material = 2 || opts.on_material
+  var off_material = 0 || opts.off_material
+  var boardPos = opts.boardPosition || [-32, 1, -32]
   var boardSize = opts.boardSize || 64
   var tickTime = opts.tickTime || 500
   var timeSinceTick = 0
   var paused = false
-  var instance = new Life(boardSize)
+  var cells = new Array(boardSize * boardSize)
+
+  function addCell(cell) {
+    cells[cell.x * boardSize + cell.z] = cell
+  }
 
   function pause() { 
     if (paused) return
@@ -24,27 +28,38 @@ module.exports = function createInstance(game, opts) {
     paused = false
   }
 
-  function randomize() {
+  function reset() {
     pause()
+
+    // clear life cells and voxels
+    cells = []
     for (var i = 0; i < boardSize; i++) {
       for (var j = 0; j < boardSize; j++) {
-        // random cell state 1 (grass) or 2 (obsidian)
-        instance.setCell(i, j, Math.random() > 0.5 ? 1 : 0)
+        var pos = [boardPos[0] + i, boardPos[1], boardPos[2] + j] 
+        game.setBlock(pos, off_material)
       }
     }
-    paint()
+
+    // add glider cells
+    addCell( { x: 0, z: 0, on: true } )
+    addCell( { x: 0, z: 1, on: true } )
+    addCell( { x: 0, z: 2, on: true } )
+    addCell( { x: 1, z: 2, on: true } )
+    addCell( { x: 2, z: 1, on: true } )
+
+    updateVoxels()
   }
 
   function readVoxels() {
     console.log('readVoxels')
-    for (var i = 0; i < boardSize; i++) {
-      for (var j = 0; j < boardSize; j++) {
-        var pos = [boardPos[0] + i, boardPos[1], boardPos[2] + j] 
-	// voxel material 2 (obsidian) is active life cell
-        instance.setCell(i, j, game.getBlock(pos) === 2 ? 1 : 0) 
+    for (var x = 0; x < boardSize; x++) {
+      for (var z = 0; z < boardSize; z++) {
+        var pos = [boardPos[0] + x, boardPos[1], boardPos[2] + z] 
+        if (game.getBlock(pos) === on_material) {
+          addCell( { x: x, z: z, on: true } )
+        }
       }
     }
-    paint()
   }
 
   function tick(dt) { 
@@ -52,18 +67,69 @@ module.exports = function createInstance(game, opts) {
     timeSinceTick += dt
     if (timeSinceTick > tickTime) {
       timeSinceTick = 0
-      instance.tick() // slow? need partial tick without paint
-      paint()
+
+      // remove inactive cells
+      cells = cells.map(function (cell) { 
+        return cell && cell.on ? cell : undefined 
+      })
+
+      var possibleNewCells = []
+
+      cells.forEach(function (cell) {
+        if (!cell) return
+        // check each of 8 neighbors:
+        // if a neighbor is active, increment counter
+        // otherwise, save for later to check for new cell
+        var count = 0 // number of live neighbors
+        for (var dx = -1; dx < 2; dx++) {
+          for (var dz = -1; dz < 2; dz++) {
+            if (dx === 0 && dz === 0) continue
+            var empty = getEmptyNeighbor(cell.x, cell.z, dx, dz)
+            if (empty) possibleNewCells.push(empty)
+            else count++
+          }
+        }
+        if (count < 2 || count > 3) cell.on = false
+      })
+
+      possibleNewCells.map(function (cell) {
+        var count = 0 // number of live neighbors
+        for (var dx = -1; dx < 2; dx++) {
+          for (var dz = -1; dz < 2; dz++) {
+            if (dx === 0 && dz === 0) continue
+            var empty = getEmptyNeighbor(cell.x, cell.z, dx, dz)
+            if (!empty) count++
+          }
+        }
+        if (count === 3) return cell // a new cell is born
+        return undefined
+      }).forEach(function (cell) {
+          if (!cell) return
+          cell.on = true
+          addCell(cell)
+      })
+
+      function getEmptyNeighbor(x, z, dx, dz) {
+        var x_coord = (x + dx) % boardSize
+        if (x_coord < 0) x_coord += boardSize
+
+        var z_coord = (z + dz) % boardSize
+        if (z_coord < 0) z_coord += boardSize
+
+        if (cells[x_coord * boardSize + z_coord]) return false
+        return  { x: x_coord, z: z_coord, on: false }
+      }
+
+      updateVoxels()
     }
   }
 
-  function paint() {
-    for (var i = 0; i < boardSize; i++) {
-      for (var j = 0; j < boardSize; j++) {
-        var pos = [boardPos[0] + i, boardPos[1], boardPos[2] + j] 
-        game.setBlock(pos, instance.getCell(i, j) ? 2 : 1)
-      }
-    }
+  function updateVoxels() {
+    cells.forEach(function (cell) { 
+      if (!cell) return
+      var pos = [boardPos[0] + cell.x, boardPos[1], boardPos[2] + cell.z] 
+      game.setBlock(pos, cell.on ? on_material : off_material)
+    })
   }
 
   // public api:
@@ -71,10 +137,9 @@ module.exports = function createInstance(game, opts) {
     pause: pause,
     togglePause: togglePause,
     resume: resume,
-    randomize: randomize,
+    reset: reset,
     tick: tick,
-    readVoxels: readVoxels,
-    paint: paint
+    readVoxels: readVoxels
   }
 }
 

@@ -16,8 +16,8 @@ Key.R      = Joystick1.Button4  // Btn Y -- 1st/3rd person view
 Key.T      = Joystick1.Button6  // RB    -- rotate copied selection
 //Key.W      = Joystick1.Button7  // Back button - randomize GoL
 Key.Escape = Joystick1.Button8  // Start button - release mouse
-Key.I      = Joystick1.Button9  // LS Click - toggle select mode
-Key.H      = Joystick1.Button10 // RS Click - toggle adjacent
+Key.H      = Joystick1.Button9  // LS Click - toggle adjacent
+Key.I      = Joystick1.Button10 // RS Click - toggle select mode
 
 // Mouse Clicks
 Mouse.LeftButton   = EnsureMapRange(Joystick1.z, 0,-1, 0,1) //RT

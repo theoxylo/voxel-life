@@ -4,7 +4,7 @@ function Voxel(pos, material) {
     
   if (!(this instanceof Voxel)) {
     console.log("warning: Voxel called without 'new' keyword")
-    return new Voxel(pos)
+    return new Voxel(pos, material)
   }
   
   return {
