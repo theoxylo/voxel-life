@@ -31,6 +31,15 @@ function createNonRepeater(keyControl, fn) {
   }
 }
 
+var materials = [
+  'obsidian',
+  'diamond',
+  ['grass', 'dirt', 'grass_dirt'], // top, bottom, sides
+  'brick',
+  'grass',
+  'plank'
+]
+
 var game = createGame( {
   generateOld: function (x, y, z) {
       return (y % 16 === 0) ? Math.ceil(Math.random() * 2) // repeating levels of grass and obsidian
@@ -59,8 +68,9 @@ var game = createGame( {
     , 'T': 'select_rotate'
     , 'O': 'life_reset'
     , 'P': 'life_pause'
-    , 'U': 'life_speed_up'
-    , 'J': 'life_speed_down'
+    , 'U': 'life_faster'
+    , 'J': 'life_slower'
+    , 'N': 'material_change'
     , '<mouse 1>': 'fire'
     , '<mouse 2>': 'firealt'
     , '<space>'  : 'jump'
@@ -106,6 +116,10 @@ highlighter.on('remove-adjacent', function (voxelPos) { blockPosPlace = null })
 
 // block interaction stuff, uses highlight data
 var currentMaterial = 2 // default obsidian
+var triggerMaterialChange = createNonRepeater('material_change', function () {
+  currentMaterial = ++currentMaterial % materials.length
+  if (!currentMaterial) currentMaterial = 1
+})
 
 game.on('fire', function (target, state) {
   var position = blockPosPlace
@@ -127,15 +141,17 @@ var triggerRotate = createNonRepeater('select_rotate')
 // GoL support, life engine wrapper
 var life = require('./life-engine')(game, { 
   tickTime: 200
-  //, off_material: 1 // for fill in
-  , on_material: 3 // e.g. glowstone from materials []
-  , boardSize: 96 // huge!
+  , off_material: 2 // for fill in
+  , on_material: 4 // from materials []
+  , boardSize: 24
 })
 life.reset()
 life.resume()
 
 var triggerLifeReset = createNonRepeater('life_reset', life.reset)
-var triggerLifePause     = createNonRepeater('life_pause',     life.togglePause)
+var triggerLifePause = createNonRepeater('life_pause', life.togglePause)
+var triggerLifeFaster = createNonRepeater('life_faster', life.speedUp)
+var triggerLifeSlower = createNonRepeater('life_slower', life.speedDown)
 
 // main update function, called at about 60 hz
 game.on('tick', onUpdate)
@@ -158,12 +174,13 @@ function onUpdate(dt) {
   }
   
   triggerView() // 1st vs 3rd person view
+  triggerMaterialChange() // select next material
   
   // game of life triggers
-  if (game.controls.state.life_speed_up) life.speedUp()
-  else if (game.controls.state.life_speed_down) life.speedDown()
   triggerLifeReset()
   triggerLifePause()
+  triggerLifeFaster()
+  triggerLifeSlower()
   life.tick(dt) // iterate life engine
 }
 
