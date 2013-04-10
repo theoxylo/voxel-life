@@ -140,8 +140,9 @@ var triggerRotate = createNonRepeater('select_rotate')
 
 // GoL support, life engine wrapper
 var life = require('./life-engine')(game, { 
-  tickTime: 200
-  , off_material: 2 // for fill in
+  frequency: 900
+  //, off_material: 2 // for fill in
+  , off_material: 0 // for empty space
   , on_material: 4 // from materials []
   , boardSize: 24
 })
