@@ -181,7 +181,7 @@ function onUpdate(dt) {
   triggerLifePause()
   triggerLifeFaster()
   triggerLifeSlower()
-  life.tick(dt) // iterate life engine
+  life.update(dt)
 }
 
 highlighter.on('highlight-select', function (s) {
