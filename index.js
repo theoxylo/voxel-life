@@ -32,27 +32,25 @@ function createNonRepeater(keyControl, fn) {
 }
 
 var materials = [
-  'obsidian',
-  'diamond',
   ['grass', 'dirt', 'grass_dirt'], // top, bottom, sides
+  'diamond',
+  'obsidian',
   'brick',
   'grass',
   'plank'
 ]
 
 var game = createGame( {
-  generateOld: function (x, y, z) {
-      return (y % 16 === 0) ? Math.ceil(Math.random() * 2) // repeating levels of grass and obsidian
-      : (x === 0 && y === 1 && z === 0) ? 3         // brick
-      : (x === 1 && y === 1 && z === 0) ? 4         // plank
-      : 0                                           // empty
-  },
   generate: function (x, y, z) {
     return (y === 10 && x === 0 && z === 0) ? 3 // single voxel for player start platform
-      //: (y === 0 && Math.abs(x) <= 32 && Math.abs(z) <= 32) ? 1   // expanse of grass same size as life board
-      //: (y === 0 && Math.abs(x) <= 48 && Math.abs(z) <= 48) ? 1   // expanse of grass same size as life board
-      : (y === 0) ? 1   // infinite expanse of grass, bigger than life board
+      : (y === 0) ? 1   // infinite expanse
       : 0 // space!
+
+      //: (y === 0 && Math.abs(x) <= 64 && Math.abs(z) <= 64) ? 1   // small platform, for use with wrapping life board in which 4 corners are touching
+      //: (!(x % 10) || !(z % 10)) ? 3
+      //: (y % 16 === 0) ? Math.ceil(Math.random() * 2) // repeating levels of grass and obsidian
+      //: (x === 0 && y === 1 && z === 0) ? 3         // brick
+      //: (x === 1 && y === 1 && z === 0) ? 4         // plank
   },
   keybindings: {
       'W': 'forward'
@@ -91,7 +89,6 @@ var game = createGame( {
   controls: { discreteFire: true }
 })
 
-window.game = game // add to global browser scope for easy debugging
 game.appendTo(document.body)
 
 // add the player
@@ -123,7 +120,14 @@ var triggerMaterialChange = createNonRepeater('material_change', function () {
 
 game.on('fire', function (target, state) {
   var position = blockPosPlace
-  if (position) game.createBlock(position, currentMaterial)
+  if (position) {
+    if (currentMaterial === life.on_material) {
+      life.addCell(position)
+    }
+    else {
+      game.createBlock(position, currentMaterial)
+    }
+  }
   else {
     position = blockPosErase
     if (position) game.setBlock(position, 0)
@@ -143,8 +147,7 @@ var life = require('./life-engine')(game, {
   frequency: 900
   //, off_material: 2 // for fill in
   , off_material: 0 // for empty space
-  , on_material: 4 // from materials []
-  , boardSize: 24
+  , on_material: 2 // from materials []
 })
 life.reset()
 life.resume()
@@ -162,16 +165,17 @@ function onUpdate(dt) {
     clipboard.copy(selection.start, selection.end)
   }
   else if (triggerPaste()) {
-    clipboard.paste(highlighter.currVoxelAdj || highlighter.currVoxelPos, selection)
-    life.readVoxels()
+    // standard impl will call game.setBlock directly
+    //clipboard.paste(highlighter.currVoxelAdj || highlighter.currVoxelPos)
+    var voxels = clipboard.getContentsAt(highlighter.currVoxelAdj || highlighter.currVoxelPos)
+    life.addCells(voxels)
   }
   
   if (triggerRotate()) clipboard.rotateAboutY()
   
   if (triggerExport()) {
     var exportedData = JSON.stringify(clipboard.exportData())
-    console.log(exportedData)
-    alert("Selection data: " + exportedData)
+    console.log("Selection data: " + exportedData)
   }
   
   triggerView() // 1st vs 3rd person view
@@ -194,6 +198,11 @@ highlighter.on('highlight-deselect', function (s) {
   selection = null
   console.log("<<< [" + s.start + "][" + s.end + "] selection un-highlighted")
 })
+
+// add objects to global scope for easy debugging
+game.clipboard = clipboard
+game.life = life
+if (!window.game) window.game = game
 
 //highlighter.on('highlight', function (voxelPos) {
 //  console.log(">   [" + voxelPos + "] highlighted voxel")

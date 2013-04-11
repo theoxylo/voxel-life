@@ -1,5 +1,6 @@
 module.exports = function createInstance(game, opts) {
   opts = opts || {}
+	//var 3d = false
   var on_material = opts.on_material || 2
   var off_material = opts.off_material || 0 // default to empty space for inactive cells
   var frequency = opts.frequency || 500
@@ -7,10 +8,14 @@ module.exports = function createInstance(game, opts) {
   var paused = false
   var cells = []
   var live_cell_count = 0
+  var cellsToAdd = []
 
   function addCell(voxel) { // voxel is [x,y,z]
-    voxel.on = true
-    cells.push(voxel)
+    cellsToAdd.push( { x: voxel[0], y: voxel[1], z: voxel[2], on: true, off_material: 0 } )
+  }
+
+  function addCells(voxelArray) { // voxelArray is [ [x,y,z], [x,y,z] ]
+    while (voxelArray.length) addCell(voxelArray.pop())
   }
 
   function pause() { 
@@ -32,9 +37,10 @@ module.exports = function createInstance(game, opts) {
     pause()
 
     cells.forEach(function (cell) { 
-      game.setBlock([cell.x, cell.y, cell.z], off_material)
+      var pos = [cell.x, cell.y, cell.z]
+			game.setBlock(pos, off_material)
     })
-    cells.length = 0 // clear
+    cells = [] // cells.length = 0 // clear and reuse?
 
     // add glider cells
     cells.push( { x: 0, y: 1, z: 0, on: true, off_material: 0 } )
@@ -85,48 +91,71 @@ module.exports = function createInstance(game, opts) {
     
     console.log("iteration " + generation_counter++ + ": live cells: " + live_cell_count + ", cells.length: " + cells.length)
 
-    var possibleNewCells = []
+    var candidateCells = []
     live_cell_count = 0
 
+    // apply any cell additions that came in from addCell
+    cellsToAdd.forEach(function (cell) {
+			console.log('adding live cell:')
+			console.log(cell)
+		  cells.push(cell)
+		})
+
+		var board_size = 64
     // update voxels in world (both on and off), then remove dead cells from array
     cells = cells.filter(function (cell) {
       var material = cell.on ? on_material : (cell.off_material || off_material)
-      game.setBlock([cell.x, cell.y, cell.z], material)
+      var pos = [cell.x, cell.y, cell.z]
+			pos = pos.map(function (coord) {
+				coord = coord % board_size
+				if (coord < board_size * -1) coord += board_size
+				return coord
+			})
+
+			// limit position to wrapping boarder
+			game.setBlock(pos, material)
+      //if (game.voxels.chunkAtPosition(pos)) { // don't try to update out of bounds
+        //game.setBlock(pos, material)
+      //}
       return cell.on
     })
 
-    var newCellsAdded = [] // track additions to avoid duplicates
+		// check current live cells for neighbors
+		// check each of 8 neighbors of this active cell:
+		// if a neighbor is active, increment counter
+		// otherwise, save empty cell for later to check for activation
+		var emptyCellIdCache = [] // a cache for IDs to check before avoiding dups
 
-    // check current live cells for neighbors
-    cells.forEach(function (cell) { 
-      live_cell_count++
-      // check each of 8 neighbors of this active cell:
-      // if a neighbor is active, increment counter
-      // otherwise, save empty cell for later to check for activation
+		cells.forEach(function (cell) { 
+			live_cell_count++
+			var liveNeighbors = 0 // number of live neighbors
+			for (var dx = -1; dx < 2; dx++) {
+				//if (3d) for (var dy = -1; dy < 2; dy++) { // 3D
+				//else 
+				for (var dy = 0; dy < 1; dy++) { // x,z plane
+					for (var dz = -1; dz < 2; dz++) {
+						if (dx === 0 && dy === 0 && dz === 0) continue // skip self
+						var cellId = [cell.x + dx, cell.y + dy, cell.z + dz].join()
+						if (emptyCellIdCache.indexOf(cellId) > -1) continue // empty already added
+						var empty = getEmptyNeighbor(cell.x + dx, cell.y + dy, cell.z + dz)
+						if (empty) {
+							candidateCells.push(empty)
+							emptyCellIdCache.push(cellId)
+						}
+						else liveNeighbors++
+					}
+				}
+			}
+			if (liveNeighbors < 2 || liveNeighbors > 3) cell.on = false
+		})
+
+
+    candidateCells.forEach(function (cell) { // check empty neighbors for birth
       var liveNeighbors = 0 // number of live neighbors
       for (var dx = -1; dx < 2; dx++) {
-        for (var dy = 0; dy < 1; dy++) { // mono-layer
-          for (var dz = -1; dz < 2; dz++) {
-            if (dx === 0 && dy === 0 && dz === 0) continue // skip self
-            var cellId = [cell.x + dx, cell.y + dy, cell.z + dz].join()
-            if (newCellsAdded.indexOf(cellId) > -1) continue // empty already added
-            var empty = getEmptyNeighbor(cell.x + dx, cell.y + dy, cell.z + dz)
-            if (empty) {
-                possibleNewCells.push(empty)
-                newCellsAdded.push(cellId)
-            }
-            else liveNeighbors++
-          }
-        }
-      }
-      if (liveNeighbors < 2 || liveNeighbors > 3) cell.on = false
-    })
-
-
-    possibleNewCells.forEach(function (cell) { // check empty neighbors for birth
-      var liveNeighbors = 0 // number of live neighbors
-      for (var dx = -1; dx < 2; dx++) {
-        for (var dy = 0; dy < 1; dy++) { // mono-layer
+				//if (3d) for (var dy = -1; dy < 2; dy++) { // 3D
+				//else 
+				for (var dy = 0; dy < 1; dy++) { // x,z plane
           for (var dz = -1; dz < 2; dz++) {
             if (dx === 0 && dy === 0 && dz === 0) continue // skip self
             if (!getEmptyNeighbor(cell.x + dx, cell.y + dy, cell.z + dz)) {
@@ -144,6 +173,10 @@ module.exports = function createInstance(game, opts) {
 
   // public api:
   return {       
+	  on_material: on_material,
+	  off_material: off_material,
+    addCell: addCell,
+		addCells: addCells,
     pause: pause,
     togglePause: togglePause,
     resume: resume,
