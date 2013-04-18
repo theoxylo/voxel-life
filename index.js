@@ -1,4 +1,4 @@
-var createGame = require('voxel-engine')
+var voxel_engine_createGame = require('voxel-engine')
 var highlight = require('voxel-highlight')
 var createPlayer = require('voxel-player')
 var texturePath = require('painterly-textures')(__dirname)
@@ -40,17 +40,16 @@ var materials = [
   'plank'
 ]
 
-var game = createGame( {
+var life_board_size = 64
+
+var game = voxel_engine_createGame( {
   generate: function (x, y, z) {
     return (y === 10 && x === 0 && z === 0) ? 3 // single voxel for player start platform
-      : (y === 0) ? 1   // infinite expanse
+      : (x < -life_board_size || x > life_board_size) ? 0
+      : (z < -life_board_size || z > life_board_size) ? 0
+      : (y === 0) ? 1   // grassy pastures
+      : (y === 1 && (!(x % 16) || !(z % 16))) ? 3 // obsidian fences
       : 0 // space!
-
-      //: (y === 0 && Math.abs(x) <= 64 && Math.abs(z) <= 64) ? 1   // small platform, for use with wrapping life board in which 4 corners are touching
-      //: (!(x % 10) || !(z % 10)) ? 3
-      //: (y % 16 === 0) ? Math.ceil(Math.random() * 2) // repeating levels of grass and obsidian
-      //: (x === 0 && y === 1 && z === 0) ? 3         // brick
-      //: (x === 1 && y === 1 && z === 0) ? 4         // plank
   },
   keybindings: {
       'W': 'forward'
@@ -76,14 +75,7 @@ var game = createGame( {
     , '<control>': 'alt'
   }, 
   chunkDistance: 4,
-  materials: [
-    'obsidian',
-    'diamond',
-    ['grass', 'dirt', 'grass_dirt'],
-    'brick',
-    'grass',
-    'plank'
-  ],
+  materials: materials,
   texturePath: texturePath,
   worldOrigin: [0, 0, 0],
   controls: { discreteFire: true }
@@ -121,12 +113,10 @@ var triggerMaterialChange = createNonRepeater('material_change', function () {
 game.on('fire', function (target, state) {
   var position = blockPosPlace
   if (position) {
-    if (currentMaterial === life.on_material) {
-      life.addCell(position)
-    }
-    else {
-      game.createBlock(position, currentMaterial)
-    }
+    game.createBlock(position, currentMaterial)
+
+    // add new active life cell
+    if (currentMaterial === life.on_material) life.addCell(position)
   }
   else {
     position = blockPosErase
@@ -144,10 +134,10 @@ var triggerRotate = createNonRepeater('select_rotate')
 
 // GoL support, life engine wrapper
 var life = require('./life-engine')(game, { 
-  frequency: 900
-  //, off_material: 2 // for fill in
-  , off_material: 0 // for empty space
-  , on_material: 2 // from materials []
+  frequency: 200
+  , board_size: life_board_size
+  , on_material: 2 // from materials [], 2 is blue diamond
+  //, off_material: 6 // trail of planks, replaces original material
 })
 life.reset()
 life.resume()
