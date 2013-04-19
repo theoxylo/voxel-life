@@ -60,6 +60,7 @@ var game = voxel_engine_createGame( {
     , 'H': 'adjacent'
     , 'I': 'select'
     , 'X': 'select_copy'
+    , 'L': 'select_preview'
     , 'E': 'select_paste'
     , 'Y': 'select_export'
     , 'T': 'select_rotate'
@@ -128,6 +129,7 @@ game.on('fire', function (target, state) {
 var clipboard = new Clipboard(game)
 var selection
 var triggerCopy = createNonRepeater('select_copy')
+var triggerPreview = createNonRepeater('select_preview')
 var triggerPaste = createNonRepeater('select_paste')
 var triggerExport = createNonRepeater('select_export')
 var triggerRotate = createNonRepeater('select_rotate')
@@ -155,10 +157,13 @@ function onUpdate(dt) {
     clipboard.copy(selection.start, selection.end)
   }
   else if (triggerPaste()) {
-    // standard impl will call game.setBlock directly
-    //clipboard.paste(highlighter.currVoxelAdj || highlighter.currVoxelPos)
+    clipboard.paste(highlighter.currVoxelAdj || highlighter.currVoxelPos)
+    // for life active cells:
     var voxels = clipboard.getContentsAt(highlighter.currVoxelAdj || highlighter.currVoxelPos)
     life.addCells(voxels)
+  }
+  else if (triggerPreview()) {
+    clipboard.preview(highlighter.currVoxelAdj || highlighter.currVoxelPos)
   }
   
   if (triggerRotate()) clipboard.rotateAboutY()

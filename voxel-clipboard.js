@@ -41,12 +41,6 @@ Clipboard.prototype.copy = function (start, end) {
   this.data = newSelectionData
 }
 
-Clipboard.prototype.paste = function (position) {
-  getContentsAt(position).forEach(function (voxel) {
-    this.game.setBlock(voxel, voxel.material)
-  })
-}
-
 Clipboard.prototype.getContentsAt = function (pos) {
   if (!this.data || !pos || pos.length !== 3) {
     console.log("paste failed: missing required data")
@@ -57,7 +51,7 @@ Clipboard.prototype.getContentsAt = function (pos) {
     newPos.translate(pos)
     return newPos
   })
-  console.log("Returning copied selection placed at position " + pos + ", data: " + moved)
+  console.log("Returning copied selection placed at position " + pos + ", data: " + moved.join(' '))
   return moved
 }
 
@@ -76,6 +70,29 @@ Clipboard.prototype.rotateAboutY = function () {
   console.log("rotateAboutY ended data: " + this.data)
 }
 
+// paint all clipboard voxels with orig restore on cancel
+Clipboard.prototype.preview = function (position) {
+  var arr_undo = arr_undo || []
+  while (arr_undo.length) { // restore orig blocks before previewing new ones
+    var voxel = arr_undo.pop()
+    this.game.setBlock(voxel.slice(), voxel.material)
+  }
+  this.getContentsAt(position).forEach(function (voxel) {
+    var orig_material = this.game.getBlock(voxel.slice())
+    this.game.setBlock(voxel.slice(), voxel.material)
+    voxel.material = orig_material // save original material for undo
+    arr_undo.push(voxel)
+  })
+}
+
+// paint all clipboard voxels
+Clipboard.prototype.paste = function (position) {
+  this.getContentsAt(position).forEach(function (voxel) {
+    this.game.setBlock(voxel.slice(), voxel.material)
+  })
+}
+
+// serialize copied voxel data as packed array of material with dimensions
 Clipboard.prototype.exportData = function () {
   
   if (!this.data) return "{ voxels: [], dimensions: [0,0,0], position: [0,0,0] }"
@@ -105,7 +122,7 @@ Clipboard.prototype.exportData = function () {
       var index1 = xyzToPackedIndex(voxel[0], voxel[1], voxel[2], dimensions)
       var index2 = getPackedIndex(voxel[0], voxel[1], voxel[2], dimensions)
       
-      if (index1 !== index2) {
+      if (index1 != index2) {
         console.log("error, indexes not the same: " + index1 + " !== " + index2)
         console.log(voxel)
       }

@@ -17,3 +17,7 @@ Voxel.prototype.translate = function (deltaPos) {
   this[1] += deltaPos[1]
   this[2] += deltaPos[2]
 }
+
+Voxel.prototype.slice = function () {
+  return [ this[0], this[1], this[2] ]
+}
