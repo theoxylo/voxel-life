@@ -37,13 +37,15 @@ keybindings: {
   , 'S': 'backward'       // move backward
   , 'D': 'right'          // strafe right
   , 'R': 'view'           // toggle 1st/3rd-person view
-  , 'H': 'adjacent'       // toggle selection of adjacent (empty) voxel
+  , 'H': 'adjacent'       // toggle selection of adjacent (empty) voxels
   , 'I': 'select'         // toggle multi-voxel selection box
   , 'X': 'select_copy'    // copy current multi-voxel selection
   , 'E': 'select_paste'   // paste current multi-voxel selection
   , 'T': 'select_rotate'  // rotates currently copied selection (in memory)
   , 'Y': 'select_export'  // export selection copy in [voxel interchange format](https://github.com/maxogden/voxel-engine#voxel-interchange-format)
-  , 'O': 'randomize'      // reset GoL state
+  , 'O': 'reset'          // reset GoL state
+  , 'U': 'speed_up'       // speed up GoL
+  , 'j': 'speed_down'     // slow down GoL
   , 'P': 'pause'          // pause GoL updates
   , '<mouse 1>': 'fire'   // left mouse click, remove or place block
   , '<mouse 2>': 'firealt'
