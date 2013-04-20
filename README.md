@@ -9,12 +9,12 @@ a browser-based voxel.js game based on Conway's Game of Life, written in JavaScr
 
 The latest stable version of the game is available online:
 
-    http://theoxylo.github.com/voxel-life/index_v3.html
+http://theoxylo.github.com/voxel-life/index_v3.html
 
 
 Some older versions are also available:
 
-    http://theoxylo.github.com/voxel-life/index_v2.html
+http://theoxylo.github.com/voxel-life/index_v2.html
 
 
 ## how to play
