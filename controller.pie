@@ -1,21 +1,23 @@
 ﻿var.TurnSpeed = 20 //Sensitivity used for right joystick
 var.InvSpeed  = 36 //Sensitivity used for POVHat - supposed to make it move one square
 
-Key.A = EnsureMapRange(Joystick1.x, 0,-1, 0,1)  // left stick, left
-Key.D = EnsureMapRange(Joystick1.x, 0, 1, 0,1)  // left stick, right
+// move WASD
 Key.W = EnsureMapRange(Joystick1.y, 0,-1, 0,1)  // left stick, up
+Key.A = EnsureMapRange(Joystick1.x, 0,-1, 0,1)  // left stick, left
 Key.S = EnsureMapRange(Joystick1.y, 0, 1, 0,1)  // left stick, down
+Key.D = EnsureMapRange(Joystick1.x, 0, 1, 0,1)  // left stick, right
 
 Key.Space  = Joystick1.Button1  // Btn A -- jump
-Key.X      = Joystick1.Button2  // Btn B -- copy
-Key.I      = Joystick1.Button3  // Btn X -- toggle select mode
-Key.E      = Joystick1.Button4  // Btn Y -- paste
-Key.P      = Joystick1.Button5  // LB    -- pause GoL
-Key.T      = Joystick1.Button6  // RB    -- rotate copied selection
-Key.O      = Joystick1.Button7  // Back button - randomize GoL
+Key.T      = Joystick1.Button2  // Btn B -- copy
+Key.E      = Joystick1.Button3  // Btn X -- paste
+Key.R      = Joystick1.Button4  // Btn Y -- 1st/3rd person view
+//Key.W      = Joystick1.Button4  // Btn Y -- paste
+Key.J      = Joystick1.Button5  // LB    -- slow down GoL
+Key.U      = Joystick1.Button6  // RB    -- speed up GoL
+Key.N      = Joystick1.Button7  // Back btn - Next material
 Key.Escape = Joystick1.Button8  // Start button - release mouse
 Key.H      = Joystick1.Button9  // LS Click - toggle adjacent
-Key.R      = Joystick1.Button10 // RS Click - 1st/3rd person view
+Key.I      = Joystick1.Button10 // RS Click - toggle select mode
 
 // Mouse Clicks
 Mouse.LeftButton   = EnsureMapRange(Joystick1.z, 0,-1, 0,1) //RT
@@ -26,10 +28,12 @@ Mouse.DirectInputY = Mouse.DirectInputY + var.TurnSpeed*deadzone(-Joystick1.yaw)
 Mouse.DirectInputX = Mouse.DirectInputX + var.TurnSpeed*deadzone(Joystick1.pitch) // right stick, x
 
 // D-pad
-Key.P           = EnsureMapRange(Joystick1.Pov1y, 0,-1, 0,1)  // D-pad, up
-Key.C           = EnsureMapRange(Joystick1.Pov1y, 0, 1, 0,1)  // D-pad, down
-Mouse.WheelUp   = EnsureMapRange(Joystick1.Pov1x, 0,-1, 0,1)  // D-pad, left
-Mouse.WheelDown = EnsureMapRange(Joystick1.Pov1x, 0, 1, 0,1)  // D-pad, right
+Key.P           = EnsureMapRange(Joystick1.Pov1y, 0,-1, 0,1)  // D-pad, up   // GoL - pause
+Key.O           = EnsureMapRange(Joystick1.Pov1y, 0, 1, 0,1)  // D-pad, down // GoL - randomize
+Key.X           = EnsureMapRange(Joystick1.Pov1x, 0,-1, 0,1)  // D-pad, left  // copy
+Key.E           = EnsureMapRange(Joystick1.Pov1x, 0, 1, 0,1)  // D-pad, right // paste
+//Mouse.WheelUp   = EnsureMapRange(Joystick1.Pov1x, 0,-1, 0,1)  // D-pad, left
+//Mouse.WheelDown = EnsureMapRange(Joystick1.Pov1x, 0, 1, 0,1)  // D-pad, right
 
 //Key.LShift = Joystick1.Button2  // Btn B button, crouch
 

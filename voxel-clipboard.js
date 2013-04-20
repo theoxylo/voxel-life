@@ -29,35 +29,30 @@ Clipboard.prototype.copy = function (start, end) {
   var newSelectionData = []
   var index = 0
 
-  for (var i = 0; i < this.dims[0]; i++) {
-    for (var j = 0; j < this.dims[1]; j++) {
-      for (var k = 0; k < this.dims[2]; k++) {
+  for (var x = 0; x < this.dims[0]; x++) {
+    for (var y = 0; y < this.dims[1]; y++) {
+      for (var z = 0; z < this.dims[2]; z++) {
         // store voxel block material index, 0 for none
-        var material = this.game.getBlock([x_min + i, y_min + j, z_min + k])
-        newSelectionData[index++] = new Voxel([i, j, k], material)
+        var material = this.game.getBlock([x_min + x, y_min + y, z_min + z])
+        newSelectionData[index++] = new Voxel([x, y, z], material)
       }
     }
   }
   this.data = newSelectionData
 }
 
-Clipboard.prototype.paste = function (position, selection) {
-  if (!this.data || (!position && !selection)) {
+Clipboard.prototype.getContentsAt = function (pos) {
+  if (!this.data || !pos || pos.length !== 3) {
     console.log("paste failed: missing required data")
     return;
   }
-  if (!position) { // derive placement position from selection volume
-     var x_min = Math.min(selection.start[0], selection.end[0])
-     var y_min = Math.min(selection.start[1], selection.end[1])
-     var z_min = Math.min(selection.start[2], selection.end[2])
-     position = [x_min, y_min, z_min]
-  }
-  console.log("Pasting copied selection at position " + position + ", data: " + this.data)
-
-  var game = this.game
-  this.data.map(function (voxel) {
-      game.setBlock([position[0] + voxel[0], position[1] + voxel[1], position[2] + voxel[2]], voxel.material)
+  var moved = this.data.map(function (voxel) {
+    var newPos = new Voxel(voxel, voxel.material)
+    newPos.translate(pos)
+    return newPos
   })
+  console.log("Returning copied selection placed at position " + pos + ", data: " + moved.join(' '))
+  return moved
 }
 
 Clipboard.prototype.rotateAboutY = function () {
@@ -75,6 +70,29 @@ Clipboard.prototype.rotateAboutY = function () {
   console.log("rotateAboutY ended data: " + this.data)
 }
 
+// paint all clipboard voxels with orig restore on cancel
+Clipboard.prototype.preview = function (position) {
+  var arr_undo = arr_undo || []
+  while (arr_undo.length) { // restore orig blocks before previewing new ones
+    var voxel = arr_undo.pop()
+    this.game.setBlock(voxel.slice(), voxel.material)
+  }
+  this.getContentsAt(position).forEach(function (voxel) {
+    var orig_material = this.game.getBlock(voxel.slice())
+    this.game.setBlock(voxel.slice(), voxel.material)
+    voxel.material = orig_material // save original material for undo
+    arr_undo.push(voxel)
+  })
+}
+
+// paint all clipboard voxels
+Clipboard.prototype.paste = function (position) {
+  this.getContentsAt(position).forEach(function (voxel) {
+    this.game.setBlock(voxel.slice(), voxel.material)
+  })
+}
+
+// serialize copied voxel data as packed array of material with dimensions
 Clipboard.prototype.exportData = function () {
   
   if (!this.data) return "{ voxels: [], dimensions: [0,0,0], position: [0,0,0] }"
@@ -104,7 +122,7 @@ Clipboard.prototype.exportData = function () {
       var index1 = xyzToPackedIndex(voxel[0], voxel[1], voxel[2], dimensions)
       var index2 = getPackedIndex(voxel[0], voxel[1], voxel[2], dimensions)
       
-      if (index1 !== index2) {
+      if (index1 != index2) {
         console.log("error, indexes not the same: " + index1 + " !== " + index2)
         console.log(voxel)
       }
