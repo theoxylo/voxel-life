@@ -7,26 +7,26 @@ a browser-based voxel.js game based on Conway's Game of Life, written in JavaScr
 ## play online
 The latest stable version of the game is available online:
 
-http://theoxylo.github.com/voxel-life
+http://theoxylo.github.com/voxel-life/index_v3.html
 
 ## how to play
 Game play is still very rough and evolving quickly, but here are some things to try.
 
 #### Shapes you create in the ground with obsidian will become active life patterns:
 1. pause the life simulation: press the P key
-2. remove some grass cubes: look at the cube and left-click
-3. add obsidian cubes: press H to toggle build mode, then left-click
-4. unpause the simulation and your new creation will come to life
+2. add diamond blocks: press H to toggle build mode, then left-click
+3. unpause the simulation and your new creation will come to life
 
 #### You can copy interesting formations and paste them again:
 1. pause the life simulation: press the P key
-2. change to select mode: press the I key
-3. move and look around until you get the desired selection (press H to select empty cubes)
+2. toggle to select mode: press the I key
+3. move and look around until you get the desired selection (toggle H to select empty cubes)
 4. copy the selection into memory: press the X key
 5. cancel select mode: press the I key again
 5. you can rotate the selection before pasting: press the T key
 6. paste the selection: press the E key
 7. unpause the simulation and your new creations will come to life
+8. you can paste additional copies without pausing
 
 ## controls
 These are not yet configurable via the UI (coming soon)
