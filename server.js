@@ -1,14 +1,3 @@
-// var StaticServer = require('node-static').Server
-// 
-// var staticServer = new StaticServer('./')
-// 
-// require('http').createServer(function(request, response) {
-//   request.addListener('end', function() {
-//     console.log(request.url)
-//     staticServer.serve(request, response)
-//   })
-// }).listen(8080)
-
 var http = require('http');
 var ecstatic = require('ecstatic');
 

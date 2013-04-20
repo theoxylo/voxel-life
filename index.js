@@ -1,5 +1,4 @@
-var voxel = require('voxel')
-var createGame = require('voxel-engine')
+var voxel_engine_createGame = require('voxel-engine')
 var highlight = require('voxel-highlight')
 var createPlayer = require('voxel-player')
 var texturePath = require('painterly-textures')(__dirname)
@@ -32,12 +31,25 @@ function createNonRepeater(keyControl, fn) {
   }
 }
 
-var game = createGame( {
+var materials = [
+  ['grass', 'dirt', 'grass_dirt'], // top, bottom, sides
+  'diamond',
+  'obsidian',
+  'brick',
+  'grass',
+  'plank'
+]
+
+var life_board_size = 64
+
+var game = voxel_engine_createGame( {
   generate: function (x, y, z) {
-      (y % 16 === 0) ? Math.ceil(Math.random() * 2) // repeating levels of grass and obsidian
-      : (x === 0 && y === 1 && z === 0) ? 3         // brick
-      : (x === 1 && y === 1 && z === 0) ? 4         // plank
-      : 0                                           // empty
+    return (y === 10 && x === 0 && z === 0) ? 3 // single voxel for player start platform
+      : (x < -life_board_size || x > life_board_size) ? 0
+      : (z < -life_board_size || z > life_board_size) ? 0
+      : (y === 0) ? 1   // grassy pastures
+      : (y === 1 && (!(x % 16) || !(z % 16))) ? 3 // obsidian fences
+      : 0 // space!
   },
   keybindings: {
       'W': 'forward'
@@ -48,38 +60,35 @@ var game = createGame( {
     , 'H': 'adjacent'
     , 'I': 'select'
     , 'X': 'select_copy'
+    , 'L': 'select_preview'
     , 'E': 'select_paste'
     , 'Y': 'select_export'
     , 'T': 'select_rotate'
-    , 'O': 'life_randomize'
+    , 'O': 'life_reset'
     , 'P': 'life_pause'
+    , 'U': 'life_faster'
+    , 'J': 'life_slower'
+    , 'N': 'material_change'
     , '<mouse 1>': 'fire'
     , '<mouse 2>': 'firealt'
     , '<space>'  : 'jump'
     , '<shift>'  : 'crouch'
     , '<control>': 'alt'
   }, 
-  chunkDistance: 2,
-  materials: [
-    ['grass', 'dirt', 'grass_dirt'],
-    'obsidian',
-    'brick',
-    'grass',
-    'plank'
-  ],
+  chunkDistance: 4,
+  materials: materials,
   texturePath: texturePath,
   worldOrigin: [0, 0, 0],
   controls: { discreteFire: true }
 })
 
-window.game = game // add to global browser scope for easy debugging
 game.appendTo(document.body)
 
 // add the player
-var player = createPlayer(game)('img/player.png')
+var player = createPlayer(game)('img/player.png', { gravity: true })
 player.possess()
-player.yaw.position.set(2, 14, 4)
-var triggerView = createNonRepeater('view', player.toggle.bind(player));
+player.yaw.position.set(0, 14, 0)
+var triggerView = createNonRepeater('view', player.toggle.bind(player))
 
 // highlight blocks when you look at them
 var blockPosPlace, blockPosErase
@@ -89,7 +98,7 @@ var highlighter = highlight(game, {
   , adjacentActive: createToggler('adjacent')
   , selectActive: createToggler('select')
   , animate: true
-});
+})
 highlighter.on('highlight', function (voxelPos) { blockPosErase = voxelPos })
 highlighter.on('remove', function (voxelPos) { blockPosErase = null })
 highlighter.on('highlight-adjacent', function (voxelPos) { blockPosPlace = voxelPos })
@@ -97,11 +106,18 @@ highlighter.on('remove-adjacent', function (voxelPos) { blockPosPlace = null })
 
 // block interaction stuff, uses highlight data
 var currentMaterial = 2 // default obsidian
+var triggerMaterialChange = createNonRepeater('material_change', function () {
+  currentMaterial = ++currentMaterial % materials.length
+  if (!currentMaterial) currentMaterial = 1
+})
 
 game.on('fire', function (target, state) {
   var position = blockPosPlace
   if (position) {
     game.createBlock(position, currentMaterial)
+
+    // add new active life cell
+    if (currentMaterial === life.on_material) life.addCell(position)
   }
   else {
     position = blockPosErase
@@ -113,42 +129,60 @@ game.on('fire', function (target, state) {
 var clipboard = new Clipboard(game)
 var selection
 var triggerCopy = createNonRepeater('select_copy')
+var triggerPreview = createNonRepeater('select_preview')
 var triggerPaste = createNonRepeater('select_paste')
 var triggerExport = createNonRepeater('select_export')
 var triggerRotate = createNonRepeater('select_rotate')
 
 // GoL support, life engine wrapper
-var life = require('./life-engine')(game, { tickTime: 300 } )
-life.randomize()
+var life = require('./life-engine')(game, { 
+  frequency: 200
+  , board_size: life_board_size
+  , on_material: 2 // from materials [], 2 is blue diamond
+  //, off_material: 6 // trail of planks, replaces original material
+})
+life.reset()
 life.resume()
 
-var triggerLifeRandomize = createNonRepeater('life_randomize', life.randomize)
-var triggerLifePause     = createNonRepeater('life_pause',     life.togglePause)
+var triggerLifeReset = createNonRepeater('life_reset', life.reset)
+var triggerLifePause = createNonRepeater('life_pause', life.togglePause)
+var triggerLifeFaster = createNonRepeater('life_faster', life.speedUp)
+var triggerLifeSlower = createNonRepeater('life_slower', life.speedDown)
 
 // main update function, called at about 60 hz
-game.on('tick', function onUpdate(dt) {
+game.on('tick', onUpdate)
+
+function onUpdate(dt) {
   if (triggerCopy() && selection) {
-    clipboard.copy(selection.start, selection.end);
+    clipboard.copy(selection.start, selection.end)
   }
   else if (triggerPaste()) {
-    clipboard.paste(highlighter.currVoxelAdj || highlighter.currVoxelPos, selection);
+    clipboard.paste(highlighter.currVoxelAdj || highlighter.currVoxelPos)
+    // for life active cells:
+    var voxels = clipboard.getContentsAt(highlighter.currVoxelAdj || highlighter.currVoxelPos)
+    life.addCells(voxels)
+  }
+  else if (triggerPreview()) {
+    clipboard.preview(highlighter.currVoxelAdj || highlighter.currVoxelPos)
   }
   
   if (triggerRotate()) clipboard.rotateAboutY()
   
-  if (triggerExport() && selection) {
+  if (triggerExport()) {
     var exportedData = JSON.stringify(clipboard.exportData())
-    console.log(exportedData)
-    alert("Selection data: " + exportedData)
+    console.log("Selection data: " + exportedData)
   }
   
   triggerView() // 1st vs 3rd person view
+  triggerMaterialChange() // select next material
   
   // game of life triggers
-  triggerLifeRandomize()
+  triggerLifeReset()
   triggerLifePause()
-  life.tick(dt) // iterate life engine
-})
+  triggerLifeFaster()
+  triggerLifeSlower()
+  life.update(dt)
+}
 
 highlighter.on('highlight-select', function (s) {
   selection = s
@@ -159,6 +193,11 @@ highlighter.on('highlight-deselect', function (s) {
   selection = null
   console.log("<<< [" + s.start + "][" + s.end + "] selection un-highlighted")
 })
+
+// add objects to global scope for easy debugging
+game.clipboard = clipboard
+game.life = life
+if (!window.game) window.game = game
 
 //highlighter.on('highlight', function (voxelPos) {
 //  console.log(">   [" + voxelPos + "] highlighted voxel")
