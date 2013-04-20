@@ -1,40 +1,16 @@
-<!DOCTYPE HTML>
-<html lang="en">
-  <head>
-    <title>Voxel Life</title>
-    <meta charset="utf-8">
-    <style type="text/css">
-      body {
-        font-family: Monospace;
-        font-size: 12px;
-        background-color: #f0f0f0;
-        margin: 0px;
-        overflow: hidden;
-      }
-      #container {
-        -moz-user-select: none;
-        -webkit-user-select: none;
-        user-select: none;
-      }
-      #crosshair {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        margin: -16px 0 0 -16px;
-        width: 32px;
-        height: 32px;
-      }
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>voxel-life</title>
+</head>
+<body>
+<div id="msg"></div>
 
-      #stats { bottom: 0px; right: 0px; }
-      .bar-tab { right: 33% !important; left: 33% !important; }
-      .logo {position: absolute; top: 5px; left: 5px; }
-      .errorMessage { text-align: center; width: 200px; margin: 20px auto; }
-    </style>
-  </head>
-  <body>
-    <img class="logo" src="img/logo-white.png">
-    <div id="container"></div>
-    <div id="crosshair"><img src="img/crosshair.png"/></div>
-    <script type="text/javascript" src="bundle.js"></script>
-  </body>
+<script src="lib/jquery.js"></script>
+<!--<script src="http://ajax.cdnjs.com/ajax/libs/json2/20110223/json2.js"></script>-->
+<script src="lib/underscore.js"></script>
+<script src="lib/backbone.js"></script>
+<script src="index.js"></script>
+</body>
 </html>
