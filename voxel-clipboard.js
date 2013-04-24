@@ -55,19 +55,34 @@ Clipboard.prototype.getContentsAt = function (pos) {
   return moved
 }
 
-Clipboard.prototype.rotateAboutY = function () {
+Clipboard.prototype.rotateRight = function () {
   if (!this.data) return;
   
-  console.log("rotateAboutY start data: " + this.data);
+  console.log("rotateRight start data: " + this.data);
   
   var newSelectionData = this.data.map(function (voxel) {
-      var oldX = voxel[0]
-      voxel[0] =  voxel[2]  // x: becomes old value of z
-      voxel[2] = -oldX      // z: becomes negative old value x
+      var oldX =  voxel[0]
+      voxel[0] = -voxel[2]  // x: becomes negative old value of z
+      voxel[2] =  oldX      // z: becomes old value of x
       return voxel
   })
   this.data = newSelectionData
-  console.log("rotateAboutY ended data: " + this.data)
+  console.log("rotateRight ended data: " + this.data)
+}
+
+Clipboard.prototype.rotateLeft = function () {
+  if (!this.data) return;
+  
+  console.log("rotateLeft start data: " + this.data);
+  
+  var newSelectionData = this.data.map(function (voxel) {
+      var oldX =  voxel[0]
+      voxel[0] =  voxel[2]  // x: becomes old value of z
+      voxel[2] = -oldX      // z: becomes negative old value of x
+      return voxel
+  })
+  this.data = newSelectionData
+  console.log("rotateLeft ended data: " + this.data)
 }
 
 // paint all clipboard voxels with orig restore on cancel

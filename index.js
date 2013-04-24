@@ -63,7 +63,8 @@ var game = voxel_engine_createGame( {
     , 'L': 'select_preview'
     , 'E': 'select_paste'
     , 'Y': 'select_export'
-    , 'T': 'select_rotate'
+    , 'T': 'select_rotate_right'
+    , 'G': 'select_rotate_left'
     , 'O': 'life_reset'
     , 'P': 'life_pause'
     , 'U': 'life_faster'
@@ -128,11 +129,12 @@ game.on('fire', function (target, state) {
 // copy-paste multi-voxel selection
 var clipboard = new Clipboard(game)
 var selection
-var triggerCopy = createNonRepeater('select_copy')
-var triggerPreview = createNonRepeater('select_preview')
-var triggerPaste = createNonRepeater('select_paste')
-var triggerExport = createNonRepeater('select_export')
-var triggerRotate = createNonRepeater('select_rotate')
+var triggerCopy        = createNonRepeater('select_copy')
+var triggerPreview     = createNonRepeater('select_preview')
+var triggerPaste       = createNonRepeater('select_paste')
+var triggerExport      = createNonRepeater('select_export')
+var triggerRotateRight = createNonRepeater('select_rotate_right')
+var triggerRotateLeft  = createNonRepeater('select_rotate_left')
 
 // GoL support, life engine wrapper
 var life = require('./life-engine')(game, { 
@@ -163,10 +165,12 @@ function onUpdate(dt) {
     life.addCells(voxels)
   }
   else if (triggerPreview()) {
-    clipboard.preview(highlighter.currVoxelAdj || highlighter.currVoxelPos)
+    // not working yet...
+    //clipboard.preview(highlighter.currVoxelAdj || highlighter.currVoxelPos)
   }
   
-  if (triggerRotate()) clipboard.rotateAboutY()
+  if (triggerRotateRight()) clipboard.rotateRight()
+  if (triggerRotateLeft())  clipboard.rotateLeft()
   
   if (triggerExport()) {
     var exportedData = JSON.stringify(clipboard.exportData())

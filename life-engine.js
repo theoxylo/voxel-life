@@ -41,11 +41,13 @@ module.exports = function createInstance(game, opts) {
   function reset() {
     pause()
 
-    cells.forEach(function (cell) { 
+    for (var i = cells.length; i > 0; i--) {
+      var cell = cells[i - 1]
+      if (!cell) continue
       var pos = [cell.x, cell.y, cell.z]
       pos = constrainPosition(pos)
       game.setBlock(pos, off_material)
-    })
+    }
     cells = [] // cells.length = 0 // clear and reuse?
 
     // add glider cells at position 20,20
@@ -83,75 +85,7 @@ module.exports = function createInstance(game, opts) {
     console.log("frequency: " + frequency)
   }
 
-  // an empty/inactive neighbor is a candidate for a new live cell
-  function getEmptyNeighbor(pos) { 
-    pos = constrainPosition(pos)
-    var material = game.getBlock(pos)
-    if (material === on_material) {
-      return false // found a live neighbor, not empty
-    }
-    // return new inactive cell, candidate for activation if enough live neighbors
-    return  { 
-      x: pos[0],
-      y: pos[1],
-      z: pos[2],
-      on: false, 
-      off_material: material // track previous material to restore when cell goes inactive
-    } 
-  }
-
-  // check 8 neighbors of cell
-  var neighbors = [
-    [-1, 0, -1],
-    [ 0, 0, -1],
-    [ 1, 0, -1],
-    [-1, 0,  0],
-    [ 1, 0,  0],
-    [-1, 0,  1],
-    [ 0, 0,  1],
-    [ 1, 0,  1]
-  ]
-  function getLiveNeighborCount(cell, empty_neighbors, empty_neighbor_ids) {
-    var liveNeighbors = 0 // number of live neighbors
-
-    // without nested loops
-    for (var i = 0; i < neighbors.length; i++) {
-      var pos = [cell.x + neighbors[i][0], cell.y, cell.z + neighbors[i][2]]
-      var empty = getEmptyNeighbor(pos)
-      if (empty) {
-	if (empty_neighbors) { // collect empty neighbors if array param passed
-	  var cellId = pos.join()
-	  if (empty_neighbor_ids.indexOf(cellId) + 1) continue // this empty neighbor already checked
-	  empty_neighbors.push(empty) // save empty cell for later to check for activation
-	  empty_neighbor_ids.push(cellId) // update id cache
-	}
-      }
-      // if a neighbor is active (not empty), increment counter
-      else liveNeighbors++
-    }
-    //for (var dx = -1; dx < 2; dx++) {
-      //for (var dy = 0; dy < 1; dy++) { // x,z plane
-	//for (var dz = -1; dz < 2; dz++) {
-	  //if (dx === 0 && dy === 0 && dz === 0) continue // skip self
-	  //var pos = [cell.x + dx, cell.y + dy, cell.z + dz]
-	  //var empty = getEmptyNeighbor(pos)
-	  //if (empty) {
-	    //if (empty_neighbors) { // collect empty neighbors if array param passed
-	      //var cellId = pos.join()
-	      //if (empty_neighbor_ids.indexOf(cellId) + 1) continue // this empty neighbor already checked
-	      //empty_neighbors.push(empty) // save empty cell for later to check for activation
-	      //empty_neighbor_ids.push(cellId) // update id cache
-	    //}
-	  //}
-	  //// if a neighbor is active (not empty), increment counter
-	  //else liveNeighbors++
-	//}
-      //}
-    //}
-    return liveNeighbors
-  }
-
-  var countdown = 0
+  var countdown = frequency
   var generation_counter = 0
   var update_phase = 'check_live_cells'
   var live_cell_count = 0
@@ -164,57 +98,103 @@ module.exports = function createInstance(game, opts) {
 
     countdown -= dt
     
-    if (update_phase === 'increment_generation') {
-      //if (countdown > 0) {
-      if (countdown > dt) { // could be a little early, close enough
-	return // not yet time to set blocks
-      }
-      generation_counter++
-      countdown = frequency
-      // add any new live cell additions that came in from addCell
-      while (cellsToAdd.length) {
-	var new_cell = cellsToAdd.pop()
-	console.log('adding live cell:')
-	console.log(new_cell)
-	cells.push(new_cell)
-      }
-      // update cell voxels in world (both on and off), then remove off cells from array
-      cells = cells.filter(function (cell) {
-	// leave behind specific material or empty space
-	var material = cell.on ? on_material : (off_material || cell.off_material)
-	var pos = [cell.x, cell.y, cell.z]
-	pos = constrainPosition(pos)
-	game.setBlock(pos, material)
-	return cell.on
-      })
-      live_cell_count = cells.length
-      update_phase = 'check_live_cells'
-    }
-    
     if (update_phase === 'check_live_cells') {
       // check current live cells for overcrowding
       // and save empty neighbors to check for birth later
       empty_cells_to_check.length = 0
       empty_cell_id_cache.length = 0
-      cells.forEach(function (cell) {
-	var liveNeighbors = getLiveNeighborCount(cell, empty_cells_to_check, empty_cell_id_cache)
-	if (liveNeighbors < 2 || liveNeighbors > 3) cell.on = false
-      })
+      for (var i = cells.length; i > 0; i--) {
+        var cell = cells[i - 1]
+        if (!cell) continue
+        var liveNeighbors = 0 // number of live neighbors
+        for (var dx = -1; dx < 2; dx++) {
+          for (var dz = -1; dz < 2; dz++) {
+            if (dx === 0 && dz === 0) continue // skip self
+            var pos = constrainPosition([cell.x + dx, cell.y, cell.z + dz])
+            var cellId = pos.join()
+            if (empty_cell_id_cache.indexOf(cellId) + 1) continue // this neighbor already found to be empty
+            var material = game.getBlock(pos)
+            if (material === on_material) { // found a live neighbor, not an empty
+              liveNeighbors++
+              continue
+            }
+            empty_cell_id_cache.push(cellId)
+            empty_cells_to_check.push({ // save candidate for activation
+              x: pos[0],
+              y: pos[1],
+              z: pos[2],
+              on: false, 
+              off_material: material // track previous material to restore when cell goes inactive
+            })
+          } // end z loop
+        }   // end x loop
+        if (liveNeighbors < 2 || liveNeighbors > 3) cell.on = false
+      }
       update_phase = 'check_empty_neighbors'
-      return
+      if (countdown > 0) return
     }
 
     // check empty neighbors for birth
     if (update_phase === 'check_empty_neighbors') {
       empty_considered_count = empty_cells_to_check.length
-      empty_cells_to_check.forEach(function (cell) { 
-	if (getLiveNeighborCount(cell) === 3) { // a cell is born!
-	  cell.on = true
-	  cells.push(cell)
-	}
-      })
+      for (var i = empty_cells_to_check.length; i > 0; i--) {
+        var cell = empty_cells_to_check[i - 1]
+        var liveNeighbors = 0 // number of live neighbors
+        for (var dx = -1; dx < 2; dx++) {
+          for (var dz = -1; dz < 2; dz++) {
+            if (dx === 0 && dz === 0) continue // skip self
+            var pos = constrainPosition([cell.x + dx, cell.y, cell.z + dz])
+            var material = game.getBlock(pos)
+            if (material === on_material) { // found a live neighbor, not an empty
+              liveNeighbors++
+              if (liveNeighbors === 4) break // no need to continue, not checking empties
+            }
+          } // end z loop
+        }   // end x loop
+        if (liveNeighbors === 3) { // a cell is born!
+          cell.on = true
+          cells.push(cell)
+        }
+      } // end empty cells loop
+      update_phase = 'add_cells'
+      if (countdown > 0) return
     }
-    update_phase = 'increment_generation'
+
+    if (update_phase === 'add_cells') {
+      // add any new live cell additions that came in from addCell
+      while (cellsToAdd.length) {
+        var new_cell = cellsToAdd.pop()
+        console.log('adding live cell:')
+        console.log(new_cell)
+        cells.push(new_cell)
+      }
+      update_phase = 'increment_generation'
+      if (countdown > 0) return
+    }
+
+    if (update_phase === 'increment_generation') {
+      if (countdown > 0) {
+        return // not yet time to set blocks
+      }
+      generation_counter++
+      countdown = frequency
+      // update cell voxels in world (both on and off), then remove off cells from array
+      var cells_updated = []
+      for (var i = cells.length; i > 0; i--) {
+        var cell = cells[i - 1]
+        if (!cell) continue
+        // leave behind specific material or empty space
+        var material = cell.on ? on_material : (off_material || cell.off_material)
+        var pos = [cell.x, cell.y, cell.z]
+        pos = constrainPosition(pos)
+        game.setBlock(pos, material)
+        //return cell.on
+        if (cell.on) cells_updated.push(cell)
+      }
+      cells = cells_updated
+      live_cell_count = cells.length
+      update_phase = 'check_live_cells'
+    }
   }
 
   // wrap at edges, come in from other side
