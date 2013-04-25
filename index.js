@@ -50,37 +50,42 @@ var game = voxel_engine_createGame( {
       : (y === 0) ? 1   // grassy pastures
       : (y === 1 && (!(x % 16) || !(z % 16))) ? 3 // obsidian fences
       : 0 // space!
-  },
-  keybindings: {
-      'W': 'forward'
-    , 'A': 'left'
-    , 'S': 'backward'
-    , 'D': 'right'
-    , 'R': 'view'
-    , 'H': 'adjacent'
-    , 'I': 'select'
-    , 'X': 'select_copy'
-    , 'L': 'select_preview'
-    , 'E': 'select_paste'
-    , 'Y': 'select_export'
-    , 'T': 'select_rotate_right'
-    , 'G': 'select_rotate_left'
-    , 'O': 'life_reset'
-    , 'P': 'life_pause'
-    , 'U': 'life_faster'
-    , 'J': 'life_slower'
-    , 'N': 'material_change'
-    , '<mouse 1>': 'fire'
-    , '<mouse 2>': 'firealt'
-    , '<space>'  : 'jump'
-    , '<shift>'  : 'crouch'
-    , '<control>': 'alt'
-  }, 
-  chunkDistance: 4,
-  materials: materials,
-  texturePath: texturePath,
-  worldOrigin: [0, 0, 0],
-  controls: { discreteFire: true }
+  }
+  , keybindings: {
+        'W': 'forward'
+      , 'A': 'left'
+      , 'S': 'backward'
+      , 'D': 'right'
+      , 'R': 'view'
+      , 'H': 'adjacent'
+      , 'I': 'select'
+      , 'X': 'select_copy'
+      , 'L': 'select_preview'
+      , 'E': 'select_paste'
+      , 'Y': 'select_export'
+      , 'T': 'select_rotate_right'
+      , 'G': 'select_rotate_left'
+      , 'O': 'life_reset'
+      , 'P': 'life_pause'
+      , 'U': 'life_faster'
+      , 'J': 'life_slower'
+      , 'N': 'material_change'
+      , '<mouse 1>': 'fire'
+      , '<mouse 2>': 'firealt'
+      , '<space>'  : 'jump'
+      , '<shift>'  : 'crouch'
+      , '<control>': 'alt'
+    }
+  , worldOrigin: [0, 0, 0]
+  , controls: {
+        discreteFire: true
+      , speed: 0.001    // default is 0.0032, see voxel-control/index.js
+      , accelTimer: 500 // time to reach max speed
+    }
+  //, lightsDisabled: true
+  , chunkDistance: 4
+  , materials: materials
+  , texturePath: texturePath
 })
 
 game.appendTo(document.body)
