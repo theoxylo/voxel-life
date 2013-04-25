@@ -16,8 +16,13 @@ Voxel.prototype.translate = function (deltaPos) {
   this[0] += deltaPos[0]
   this[1] += deltaPos[1]
   this[2] += deltaPos[2]
+  return this // for chaining
 }
 
 Voxel.prototype.slice = function () {
   return [ this[0], this[1], this[2] ]
+}
+
+Voxel.prototype.toString = function () {
+  return [this[0], this[1], this[2], this.material].join(',')
 }

@@ -88,7 +88,7 @@ game.appendTo(document.body)
 // add the player
 var player = createPlayer(game)('img/player.png', { gravity: true })
 player.possess()
-player.yaw.position.set(0, 14, 0)
+player.yaw.position.set(0.5, 14, 0.5)
 var triggerView = createNonRepeater('view', player.toggle.bind(player))
 
 // highlight blocks when you look at them
