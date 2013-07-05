@@ -1,18 +1,18 @@
 {
   "name": "voxel-life",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "repository": {
     "type":"git",
     "url": "git@github.com:theoxylo/voxel-life.git"
   },
   "dependencies": {
     "painterly-textures": "0.0.3",
-    "voxel-engine":       "0.16.3",
+    "voxel":              "0.3.1",
+    "voxel-engine":       "0.18.2",
     "voxel-highlight":    "0.0.9",
     "voxel-player":       "0.1.0"
   },
   "devDependencies": {
-    "browserify":         "2.7.3",
     "browservefy":        "0.0.10",
     "ecstatic":           "0.4.2"
   },
